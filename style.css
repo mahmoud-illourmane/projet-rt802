@@ -1,0 +1,68 @@
+/*==== CONSTS ====*/
+    /*= Loading animation =*/
+        #loading-animation {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgb(38, 31, 44);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+        }
+
+        .spinner {
+            border: 4px solid rgb(177, 179, 186);
+            border-top: 4px solid #2d73d2; 
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 2s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    /*= End/Loading animation =*/
+
+    /*==  ==*/
+
+    /*==  ==*/
+/*==== END/CONSTS ====*/
+
+/*== UI/UX ==*/
+    .client-vendeur {
+        display: flex;
+        justify-content: space-between;
+    }
+    .client, .vendeur { width: 45%; }
+    .client, .vendeur, .ca { 
+        padding: 10px;
+        border-radius: 10px;
+    }
+
+    .client { background-color: #d4dfee; }
+    .vendeur { background-color: #d4ebe6; }
+    .ca {
+        margin-top: 20px;
+        background-color: #dfd9eb;
+    }
+    
+    .client .client-header, .vendeur .vendeur-header, .ca .ca-header { text-align: center; }
+/*== END/UI/UX ==*/
+
+/*==== Tablettes =====*/
+@media all  and (min-width: 601px) and (max-width: 1023px){
+    /*==== CONSTS ====*/
+
+    /*==== END/CONSTS ====*/
+}
+
+/*===== Smartphones =====*/
+@media all  and (max-width: 600px){
+    /*==== CONSTS ====*/
+
+    /*==== END/CONSTS ====*/
+}
