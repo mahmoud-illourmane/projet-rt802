@@ -1,17 +1,17 @@
 import os
-from Crypto.PublicKey import RSA
-from Crypto.Cipher import PKCS1_OAEP
+import sys
 import requests
+
+# Ajoute le chemin du répertoire parent au chemin de recherche des modules
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
+from cryptography.hazmat.primitives import serialization
+from cryptography.hazmat.primitives.asymmetric import rsa, padding
+from cryptography.hazmat.primitives import hashes
+from cryptography.hazmat.backends import default_backend
 
 from config import *
 from src.classes.tools import *
-
-"""
-    Cette classe gère toute la composante RSA.
-    Elle permet : 
-        - Générer une paire de clé RSA.
-        - Crypter/Décrypter un message.
-"""
 
 class ChiffrementRSA:
 
@@ -37,16 +37,26 @@ class ChiffrementRSA:
                 print(f"{COLOR_RED}Des clés existent déjà.{COLOR_END}")
                 return -1
 
-            key = RSA.generate(taille_cle)
+            private_key = rsa.generate_private_key(
+                public_exponent=65537,
+                key_size=taille_cle,
+                backend=default_backend()
+            )
 
-            public_key = key.publickey().exportKey("PEM")
-            private_key = key.exportKey("PEM")
-
-            with open(os.path.join(self.dossier_cles, "public_key.pem"), "wb") as f:
-                f.write(public_key)
+            public_key = private_key.public_key()
 
             with open(os.path.join(self.dossier_cles, "private_key.pem"), "wb") as f:
-                f.write(private_key)
+                f.write(private_key.private_bytes(
+                    encoding=serialization.Encoding.PEM,
+                    format=serialization.PrivateFormat.TraditionalOpenSSL,
+                    encryption_algorithm=serialization.NoEncryption()
+                ))
+
+            with open(os.path.join(self.dossier_cles, "public_key.pem"), "wb") as f:
+                f.write(public_key.public_bytes(
+                    encoding=serialization.Encoding.PEM,
+                    format=serialization.PublicFormat.SubjectPublicKeyInfo
+                ))
 
         except Exception as e:
             print(f"{COLOR_RED}Une erreur s'est produite lors de la génération des clés : {str(e)}{COLOR_END}")
@@ -73,9 +83,9 @@ class ChiffrementRSA:
             La clé publique RSA
         """
         with open(os.path.join(self.dossier_cles, "public_key.pem"), "rb") as f:
-            public_key = f.read()
+            public_key = serialization.load_pem_public_key(f.read(), backend=default_backend())
 
-        return RSA.importKey(public_key)
+        return public_key
 
     def charger_cle_privee(self):
         """
@@ -85,9 +95,9 @@ class ChiffrementRSA:
             La clé privée RSA
         """
         with open(os.path.join(self.dossier_cles, "private_key.pem"), "rb") as f:
-            private_key = f.read()
+            private_key = serialization.load_pem_private_key(f.read(), password=None, backend=default_backend())
 
-        return RSA.importKey(private_key)
+        return private_key
 
     def crypter(self, message, cle_publique):
         """
@@ -100,8 +110,14 @@ class ChiffrementRSA:
         Returns:
             Le message chiffré (bytes)
         """
-        cipher = PKCS1_OAEP.new(cle_publique)
-        return cipher.encrypt(message)
+        return cle_publique.encrypt(
+            message,
+            padding.OAEP(
+                mgf=padding.MGF1(algorithm=hashes.SHA256()),
+                algorithm=hashes.SHA256(),
+                label=None
+            )
+        )
 
     def decrypter(self, message_chiffre, cle_privee):
         """
@@ -114,13 +130,18 @@ class ChiffrementRSA:
         Returns:
             Le message déchiffré (bytes)
         """
-        cipher = PKCS1_OAEP.new(cle_privee)
-        return cipher.decrypt(message_chiffre)
+        return cle_privee.decrypt(
+            message_chiffre,
+            padding.OAEP(
+                mgf=padding.MGF1(algorithm=hashes.SHA256()),
+                algorithm=hashes.SHA256(),
+                label=None
+            )
+        )
 
     def recuperer_pub_ca(self):
         """
-        Cette méthode envoi une requête à CA pour récupérer 
-        sa clé publique.
+        Cette méthode envoie une requête à CA pour récupérer sa clé publique.
         """
         url = self.ca + CA_GET_PUB_KEY
 
@@ -140,6 +161,7 @@ class ChiffrementRSA:
         except requests.exceptions.RequestException as e:
             print(f"{COLOR_RED}Une erreur s'est produite lors de la requête : {e} {COLOR_END}")
             return None
+
 
 # Exemple
 

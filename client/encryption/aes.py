@@ -9,21 +9,22 @@ from cryptography.hazmat.primitives import hashes
 class ChiffrementAES:
 
     def __init__(self, key_file="aes_key.bin", force=False):
-        self.key_file = key_file
+        self.key_file = os.path.join(os.path.dirname(__file__), key_file)
         self.force = force
 
-        # Check if key file exists, generate a new one if missing or force=True
-        if not os.path.exists(self.key_file) or self.force:
-            self.generate_key()
+        # # Check if key file exists, generate a new one if missing or force=True
+        # if not os.path.exists(self.key_file) or self.force:
+        #     self.generate_key()
 
-        # Try to read the key, raise an exception if there's an error
-        try:
-            with open(self.key_file, "rb") as f:
-                self.key = f.read()
-        except FileNotFoundError:
-            raise FileNotFoundError("Error: Key file not found.") from None
+        # # Try to read the key, raise an exception if there's an error
+        # try:
+        #     with open(self.key_file, "rb") as f:
+        #         self.key = f.read()
+        # except FileNotFoundError:
+        #     # Key file not found, generate a new key
+        #     self.generate_key()
 
-    def a_paire_de_cles_aes(self):
+    def a_cle_aes(self):
         """
         Checks if the AES key file exists.
         """
@@ -34,10 +35,17 @@ class ChiffrementAES:
     def generate_key(self):
         """
             Generates a 256-bit AES key and saves it to the key file.
+            
+            Returns:
+                0, -1
         """
-        self.key = os.urandom(32)
-        with open(self.key_file, "wb") as f:
-            f.write(self.key)
+        if not os.path.exists(self.key_file) or self.force:
+            self.key = os.urandom(32)
+            with open(self.key_file, "wb") as f:
+                f.write(self.key)
+            return 0
+        else:
+            return -1
 
     def pad_data(self, data):
         """
@@ -78,13 +86,14 @@ class ChiffrementAES:
         plaintext = self.unpad_data(padded_plaintext)
         return plaintext
 
-# Example usage
-cipher = ChiffrementAES()
+# Example
 
-data = b"Ceci est un message secret."
-encrypted_data = cipher.encrypt(data)
-decrypted_data = cipher.decrypt(encrypted_data)
+# cipher = ChiffrementAES()
 
-print(f"Original data: {data}")
-print(f"Encrypted data: {encrypted_data}")
-print(f"Decrypted data: {decrypted_data}")
+# data = b"Ceci est un message secret."
+# encrypted_data = cipher.encrypt(data)
+# decrypted_data = cipher.decrypt(encrypted_data)
+
+# print(f"Original data: {data}")
+# print(f"Encrypted data: {encrypted_data}")
+# print(f"Decrypted data: {decrypted_data}")

@@ -1,4 +1,6 @@
 /*==== CONSTS ====*/
+    button { border-radius: 15px !important; }
+    
     /*= Loading animation =*/
         #loading-animation {
             position: fixed;
@@ -27,18 +29,43 @@
         }
     /*= End/Loading animation =*/
 
-    /*==  ==*/
+    /*== Sizes ==*/
+        .s_s { font-size: 1.0px !important; }
+        .s_M { font-size: 1.4px !important; }
+        .s_L { font-size: 1.8px !important; }
+        .s_XL { font-size: 2.0em !important; }
+    /*== END/Sizes ==*/
 
-    /*==  ==*/
+    /*== Colors ==*/
+        .c_1 { color: #34383d; }
+        .c_2 { color: #d37484; }
+        .c_3 { color: #5b875e; }
+
+        .bg_1 { background-color: #d6d2da; }
+        .bg_2 { background-color: #d2d4c3; }
+    /*== END/Colors ==*/
 /*==== END/CONSTS ====*/
 
 /*== UI/UX ==*/
+    .vendeur-off, .client-off, .ca-off,
+    .client-header, .vendeur-header, .ca-header {
+        display: inline-flex;
+        align-items: center;
+        border-radius: 10px;
+        padding: 10px;
+    }
+
+    .vendeur-off, .client-off, .ca-off {
+        border: 1px solid rgb(191, 23, 23);
+        background-color: #e97882;
+    }
+
     .client-vendeur {
         display: flex;
         justify-content: space-between;
     }
     .client, .vendeur { width: 45%; }
-    .client, .vendeur, .ca { 
+    .client, .vendeur, .ca, .print-final { 
         padding: 10px;
         border-radius: 10px;
     }
@@ -50,8 +77,32 @@
         background-color: #dfd9eb;
     }
     
-    .client .client-header, .vendeur .vendeur-header, .ca .ca-header { text-align: center; }
+    .client-header, .vendeur-header, .ca-header { 
+        border: 1px solid rgb(29, 185, 81);
+        background-color: #92e7a7;
+    }
+
+    .operations, .print {
+        margin-top: 20px;
+    }
+    .operation-btn  {
+        padding: 10px;
+        border-radius: 10px;
+    }
+    
+    .operation-btn button {
+        display: block;
+    }
+
+    .print-final { background-color: #dce4de; }
+
+    .btns-flex {
+        display: flex;
+        gap: 10px;
+    }
 /*== END/UI/UX ==*/
+
+
 
 /*==== Tablettes =====*/
 @media all  and (min-width: 601px) and (max-width: 1023px){

@@ -42,41 +42,106 @@
     <div class="projet">
         <div class="client-vendeur">
             <div class="client" id="client">
+
+                <!-- CLIENT -->
                 <div v-if="clientAvailable" class="client-content">
                     <div class="client-header">
-                        <span class="material-icons">person</span>
-                        <h2>Client actif</h2>
+                        <span class="material-icons s_XL">person</span>
+                        <h5>Client actif</h5>
+                    </div>
+
+                    <div class="client-operations operations">
+                        <h6 class="c_1">Opérations disponibles</h6>
+
+                        <div class="operations-btns">
+                            <div class="operation-btn mb-2 bg_1">
+                                <label for="operation" class="form-label">Générer une paire de clés RSA 2048</label>
+                                <button @click="generateRsaKey" class="btn btn-sm btn-primary">Générer</button>
+                            </div>
+
+                            <div class="operation-btn mb-2 bg_1">
+                                <label for="operation" class="form-label">Générer une clé AES</label>
+                                <button @click="generateAesKey" class="btn btn-sm btn-primary">Générer</button>
+                            </div>
+
+                            <div class="operation-btn mb-2 bg_2">
+                                <label for="operation" class="form-label">Vérifier la disponibilité des clés</label>
+                                <div class="btns-flex">
+                                    <button @click="checkRsaKey" class="btn btn-sm btn-primary" type="button">RSA</button>
+                                    <button @click="checkAesKey" class="btn btn-sm btn-success" type="button">AES</button>
+                                </div>
+                            </div>
+
+                            <div class="operation-btn mb-2 bg_2">
+                                <label for="operation" class="form-label">Obtenir la clé publique</label>
+                                <select class="form-select" aria-label="Default select example" v-model="selectedPubKeyReq">
+                                    <option selected disabled>Choisir</option>
+                                    <option value="vendeur">Vendeur</option>
+                                    <option value="ca">Ca</option>
+                                </select>
+                                <button class="btn btn-sm btn-success mt-2" type="button" :disabled="selectedPubKeyReq === null" @click="getPubKey">Obtenir</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="client-print print">
+                        <h6 class="c_1">Sortie</h6>
+                        <div class="print-final">
+                            {{ printClient }}
+                        </div>
                     </div>
                 </div>
                 <div v-else class="client-off">
-                    <h2>Veuillez allumer le serveur du client.</h2>
+                    <span class="material-icons s_XL">error</span>
+                    <h6>Veuillez allumer le serveur du client.</h2>
                 </div>
-            </div>
-        
+            </div> <!-- CLIENT -->
+            
+            <!-- VENDEUR -->
             <div class="vendeur" id="vendeur">
                 <div v-if="vendeurAvailable" class="vendeur-content">
                     <div class="vendeur-header">
-                        <span class="material-icons">storefront</span>
-                        <h2>Vendeur actif</h2>
+                        <span class="material-icons s_XL">storefront</span>
+                        <h5>Vendeur actif</h5>
                     </div>
+
+                    <div class="vendeur-operations operations">
+                        <h6 class="c_1">Opérations disponibles</h6>
+                    </div>
+
+                    <div class="vendeur-print print">
+                        <h6 class="c_1">Sortie</h6>
+                    </div>
+
                 </div>
                 <div v-else class="vendeur-off">
-                    <h2>Veuillez allumer le serveur du vendeur.</h2>
+                    <span class="material-icons s_XL">error</span>
+                    <h6>Veuillez allumer le serveur du vendeur.</h6>
                 </div>
-            </div>
-        </div>
+            </div> <!-- VENDEUR -->
+        </div> 
         
+        <!-- CA -->
         <div class="ca" id="ca">
             <div v-if="caAvailable" class="ca-content">
                 <div class="ca-header">
-                    <span class="material-icons">admin_panel_settings</span>
-                    <h2>Ca actif</h2>
+                    <span class="material-icons s_XL">admin_panel_settings</span>
+                    <h5>Ca actif</h5>
+                </div>
+
+                <div class="ca-operations operations">
+                    <h6 class="c_1">Opérations disponibles</h6>
+                </div>
+
+                <div class="ca-print print">
+                    <h6 class="c_1">Sortie</h6>
                 </div>
             </div>
             <div v-else class="ca-off">
-                <h2>Veuillez allumer le serveur de la CA.</h2>
+                <span class="material-icons s_XL">error</span>
+                <h6>Veuillez allumer le serveur de la CA.</h6>
             </div>
-        </div>
+        </div> <!-- CA -->
     </div>
     
 
@@ -115,27 +180,35 @@
 
                 let vendeurAvailable = ref(false);
 
-                // Requête Axios
-                async function getData() {
-                    try {
-                        const response = await axios.get('http://127.0.0.1:5002/vendeur/api/hello');
-                        const statusCode = response.status;
+                /*==== FONCTIONS ====*/
+                
+                /*==== END/FONCTIONS ====*/
 
-                        if(statusCode == 200) {
-                            vendeurAvailable.value = true;
-                        } else {
-                            vendeurAvailable.value = false;
-                            console.log("VENDEUR : requete ko");
+                /*==== REQUETES AXIOS ====*/
+                
+                    /*
+                    *   Vérifie que le serveur du vendeur est allumé.
+                    */
+                    async function checkVendeur() {
+                        try {
+                            const response = await axios.get('http://127.0.0.1:5002/vendeur/api/hello');
+                            const statusCode = response.status;
+
+                            if(statusCode == 200) {
+                                vendeurAvailable.value = true;
+                            } else {
+                                vendeurAvailable.value = false;
+                            }
+                        } catch (err) {
+                            console.log('VENDEUR : Erreur lors de la requête API :', err.message);
+                        } finally {
+                            
                         }
-                    } catch (err) {
-                        console.log('VENDEUR : Erreur lors de la requête API :', err.message);
-                    } finally {
-                        
                     }
-                }
+                /*==== END/REQUETES AXIOS ====*/
 
                 onMounted(async () => {
-                    getData();
+                    checkVendeur();
                 });
 
                 return {
@@ -151,37 +224,196 @@
                 let error = ref('');
 
                 let clientAvailable = ref(false);
+                let selectedPubKeyReq = ref(null);
+                // Résultat d'une requête
+                let printClient = ref('');
 
-                // Requête Axios
-                async function getData() {
-                    try {
-                        const response = await axios.get('http://127.0.0.1:5001/client/api/hello');
-                        const statusCode = response.status;
 
-                        if(statusCode == 200) {
-                            clientAvailable.value = true;
-                        } else {
-                            vendeurAvailable.value = false;
-                            console.log("CLIENT : requete ko");
+                /*==== FONCTIONS ====*/
+                    /*== Vérifs ==*/
+                        async function checkRsaKey() {
+                            try {
+                                const result = await a_checkRsaKey();
+                                printClient.value = result;
+                            } catch (error) {
+                                console.error('Erreur :', error);
+                            }
                         }
-                    } catch (err) {
-                        console.log('CLIENT : Erreur lors de la requête API :', err.message);
-                    } finally {
-                        
-                    }
-                }
+
+                        async function checkAesKey() {
+                            try {
+                                const result = await a_checkAesKey();
+                                printClient.value = result;
+                            } catch (error) {
+                                console.error('Client : Erreur :', error);
+                            }
+                        }
+                    /*== END/Vérifs ==*/
+
+                    /*== Creations ==*/
+                        /*
+                        *   Génère les clés RSA.
+                        */
+                        async function generateRsaKey() {
+                            try {
+                                const result = await a_generateRsaKey();
+                                printClient.value = result;
+                            } catch (error) {
+                                console.error('Erreur :', error);
+                            }
+                        }
+
+                        /*
+                        *   Génère la clé AES.
+                        */
+                        async function generateAesKey() {
+                            try {
+                                const result = await a_generateAesKey();
+                                printClient.value = result;
+                            } catch (error) {
+                                console.error('Erreur :', error);
+                            }
+                        }
+
+                        function getPubKey() {
+                            
+                            console.log('Option sélectionnée :', selectedPubKeyReq.value);
+   
+                        }
+
+                    /*== END/Creations ==*/
+
+                /*==== END/FONCTIONS ====*/
+
+                /*==== REQUETES AXIOS ====*/
+                    
+                    /*== Vérifs ==*/
+
+                        /*
+                        *   Vérifie que le serveur du client est allumé.
+                        */
+                        async function checkClient() {
+                            try {
+                                const response = await axios.get('http://127.0.0.1:5001/client/api/hello');
+                                const statusCode = response.status;
+
+                                if(statusCode == 200) {
+                                    clientAvailable.value = true;
+                                } else {
+                                    vendeurAvailable.value = false;
+                                }
+                            } catch (err) {
+                                console.log('CLIENT : Erreur lors de la requête API :', err.message);
+                            }
+                        }
+
+
+                        /*
+                        *   Vérifie la présence d'une paire de clé RSA sur le client.
+                        */
+                        async function a_checkRsaKey() {
+                            try {
+                                const response = await axios.get('http://127.0.0.1:5001/client/api/check-rsa-key');
+                                const statusCode = response.status;
+
+                                if(statusCode == 200) {
+                                    return response.data.message;
+                                } else {
+                                    return response.data.error;
+                                }
+                            } catch (err) {
+                                console.log('CLIENT : Erreur lors de la requête API :', err.message);
+                            }
+                        }
+
+                        /*
+                        *   Vérifie la présence d'une paire de clé RSA sur le client.
+                        */
+                        async function a_checkAesKey() {
+                            try {
+                                const response = await axios.get('http://127.0.0.1:5001/client/api/check-aes-key');
+                                const statusCode = response.status;
+
+                                if(statusCode == 200) {
+                                    return response.data.message;
+                                } else {
+                                    return response.data.error;
+                                }
+                            } catch (err) {
+                                console.log('CLIENT : Erreur lors de la requête API :', err.message);
+                            } finally { }
+                        }
+
+                    /*== END/Vérifs ==*/
+
+                    /*== Creations ==*/
+                    
+                        /*
+                        *   Génère une paire de clé RSA.
+                        */
+                        async function a_generateRsaKey() {
+                            try {
+                                const response = await axios.get('http://127.0.0.1:5001/client/api/generate-rsa-key');
+                                const statusCode = response.status;
+
+                                if(statusCode == 200) {
+                                    return response.data.message;
+                                } else {
+                                    return response.data.error;
+                                }
+                            } catch (err) {
+                                console.log('CLIENT : Erreur lors de la requête API :', err.message);
+                            } finally { }
+                        }
+
+                        /*
+                        *   Génère une clé AES.
+                        */
+                        async function a_generateAesKey() {
+                            try {
+                                const response = await axios.get('http://127.0.0.1:5001/client/api/generate-aes-key');
+                                const statusCode = response.status;
+
+                                if(statusCode == 200) {
+                                    return response.data.message;
+                                } else {
+                                    return response.data.error;
+                                }
+                            } catch (err) {
+                                console.log('CLIENT : Erreur lors de la requête API :', err.message);
+                            } finally { }
+                        }
+
+                    /*== END/Creations ==*/
+
+                    
+
+                    
+                /*==== END/REQUETES AXIOS ====*/
 
                 onMounted(async () => {
-                    getData();
+                    checkClient();
                 });
 
                 return {
                     clientAvailable,
+
+                    selectedPubKeyReq,
+                    printClient,
+
+                    // Fonctions Créations
+                    generateRsaKey,
+                    generateAesKey,
+                    getPubKey,
+
+                    // Fonctions Vérifs
+                    checkRsaKey,
+                    checkAesKey,
                 }
             }
         }).mount('#client');
 
-        // Client
+        // CA
         createApp({
             setup() {
                 // Variables
@@ -189,27 +421,33 @@
 
                 let caAvailable = ref(false);
 
-                // Requête Axios
-                async function getData() {
-                    try {
-                        const response = await axios.get('http://127.0.0.1:5000/ca/api/hello');
-                        const statusCode = response.status;
+                /*==== FONCTIONS ====*/
+                
+                /*==== END/FONCTIONS ====*/
 
-                        if(statusCode == 200) {
-                            caAvailable.value = true;
-                        } else {
-                            vendeurAvailable.value = false;
-                            console.log("CA : requete ko");
-                        }
-                    } catch (err) {
-                        console.log('CA : Erreur lors de la requête API :', err.message);
-                    } finally {
-                        
+                /*==== REQUETES AXIOS ====*/
+                
+                    /*
+                    *   Vérifie que le serveur de la CA est allumé.
+                    */
+                    async function checkCa() {
+                        try {
+                            const response = await axios.get('http://127.0.0.1:5000/ca/api/hello');
+                            const statusCode = response.status;
+
+                            if(statusCode == 200) {
+                                caAvailable.value = true;
+                            } else {
+                                vendeurAvailable.value = false;
+                            }
+                        } catch (err) {
+                            console.log('CA : Erreur lors de la requête API :', err.message);
+                        } finally {}
                     }
-                }
+                /*==== END/REQUETES AXIOS ====*/
 
                 onMounted(async () => {
-                    getData();
+                    checkCa();
                 });
 
                 return {

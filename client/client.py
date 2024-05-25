@@ -17,7 +17,7 @@ def main():
             
             if choice == "1": # Vérifier les clés à disposition
                 check_rsa = chiffrementRSA.a_paire_de_cles_rsa()
-                check_aes = chiffrementAES.a_paire_de_cles_aes()
+                check_aes = chiffrementAES.a_cle_aes()
                 print(f"CLES A DISPOSITONS:\nCLES RSA : {check_rsa}\nCLE AES : {check_aes}")
                 
             elif choice == "2": # Générer une paire de clés RSA
