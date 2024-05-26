@@ -71,12 +71,12 @@ class ChiffrementAES:
         return plaintext
 
 # Example usage
-cipher = ChiffrementAES()
+# cipher = ChiffrementAES()
 
-data = b"Ceci est un message secret."
-encrypted_data = cipher.encrypt(data)
-decrypted_data = cipher.decrypt(encrypted_data)
+# data = b"Ceci est un message secret."
+# encrypted_data = cipher.encrypt(data)
+# decrypted_data = cipher.decrypt(encrypted_data)
 
-print(f"Original data: {data}")
-print(f"Encrypted data: {encrypted_data}")
-print(f"Decrypted data: {decrypted_data}")
+# print(f"Original data: {data}")
+# print(f"Encrypted data: {encrypted_data}")
+# print(f"Decrypted data: {decrypted_data}")

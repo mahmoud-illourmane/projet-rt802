@@ -85,6 +85,13 @@
     .operations, .print {
         margin-top: 20px;
     }
+
+    .operation-btns-ca {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+
     .operation-btn  {
         padding: 10px;
         border-radius: 10px;
@@ -94,7 +101,16 @@
         display: block;
     }
 
-    .print-final { background-color: #dce4de; }
+    .print-final {
+        width: 100%;          
+        max-height: 400px;     
+        overflow: auto;        
+        word-wrap: break-word; 
+        border: 1px solid #ccc; 
+        padding: 10px;        
+        box-sizing: border-box; 
+        background-color: #dce4de;
+    }
 
     .btns-flex {
         display: flex;

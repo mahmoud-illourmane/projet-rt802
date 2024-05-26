@@ -1,11 +1,40 @@
 from flask import Flask
 from flask_cors import CORS
 
-import paho.mqtt.client as mqtt
-import threading
+from dotenv import load_dotenv
+import logging, os, sys
+from pathlib import Path
 
-from routes.mqtt import start_mqtt_client
+# Ajoute les répertoires contenant les modules Python au chemin de recherche des modules
+project_root = Path(__file__).resolve().parent
+sys.path.append(str(project_root))
 
+# Importation des modules personnel
+from routes.mqtt import configure_mqtt
+
+# Fichiers de routes
+from routes.api import api_bp
+from routes.mqtt import mqtt_bp
+
+# Configuration des logs pour l'utilisation du Launcher.py
+log_dir = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'client.log')
+logging.basicConfig(filename=log_dir, level=logging.DEBUG)
+
+# Instanciation du serveur Flask
+app = Flask(__name__)
+CORS(app, origins='*', methods=['GET', 'POST', 'OPTIONS']) # Permet à vue.js d'intéragir avec Flask.
+
+# Sauvegarde des Blueprints
+app.register_blueprint(api_bp)
+app.register_blueprint(mqtt_bp, url_prefix='/mqtt')
+
+# Permet l'utilisation de os.getenv
+load_dotenv()
+
+app.config['MQTT_BROKER_URL'] = os.getenv("MQTT_BROKER_URL")
+app.config['MQTT_BROKER_PORT'] = 1883
+app.config['MQTT_REFRESH_TIME'] = os.getenv("MQTT_REFRESH_TIME") 
+    
 """
 |
 |   Ce code constitue le point d'amorçage du serveur 
@@ -16,23 +45,9 @@ from routes.mqtt import start_mqtt_client
 |
 """
 
-app = Flask(__name__)
-CORS(app)
-
-mqtt_client = mqtt.Client()
-
-app.config['SERVEUR_VENDEUR'] = 'http://127.0.0.1:5002'
-app.config['SERVEUR_CA'] = 'http://127.0.0.1:5000'
-
-# Importation du fichier api.py
-from routes.api import *
+# Configurer MQTT avec l'application Flask
+configure_mqtt(app)
 
 if __name__ == '__main__':
-    # Démarrage du client MQTT dans un thread séparé
-    mqtt_thread = threading.Thread(target=start_mqtt_client)
-    mqtt_thread.daemon = True
-    mqtt_thread.start()
-    
-    # En Local
     app.run(port=5001, debug=True)
     

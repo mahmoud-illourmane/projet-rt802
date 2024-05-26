@@ -1,9 +1,12 @@
-import os
+import os, sys
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric import rsa
 from cryptography.hazmat.primitives.asymmetric import padding
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.backends import default_backend
+
+# Ajoute le chemin du répertoire parent au chemin de recherche des modules
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 class ChiffrementRSA:
 
@@ -60,6 +63,20 @@ class ChiffrementRSA:
 
         return public_key
 
+    def exporter_cle_publique_pem(self):
+        """
+        Exporte la clé publique au format PEM.
+
+        Returns:
+            str: La clé publique au format PEM
+        """
+        public_key = self.charger_cle_publique()
+        public_key_pem = public_key.public_bytes(
+            encoding=serialization.Encoding.PEM,
+            format=serialization.PublicFormat.SubjectPublicKeyInfo
+        ).decode('utf-8')
+        return public_key_pem
+        
     def charger_cle_privee(self):
         """
         Charge la clé privée depuis le fichier "private_key.pem".
@@ -118,6 +135,10 @@ class ChiffrementRSA:
 """
     Exemple d'utilisation :       
 """
+
+chiffrement = ChiffrementRSA()
+public_key = chiffrement.charger_cle_publique()
+
 
 # chiffrement = ChiffrementRSA()
 

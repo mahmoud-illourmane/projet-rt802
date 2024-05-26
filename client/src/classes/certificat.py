@@ -1,12 +1,12 @@
+from app import app
 import json
 import requests
 
-from config import *
 from encryption.rsa import ChiffrementRSA
 
 class Certificat:
     def __init__(self):
-        self.ca = CA_ADDRESS
+        self.ca = app.config['SERVEUR_CA']
         self.certificate_data = {}
     
     def collect_entries(self):

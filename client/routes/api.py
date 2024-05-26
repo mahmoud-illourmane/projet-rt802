@@ -1,11 +1,26 @@
-from app import app
 from flask import jsonify, request
+from flask import Blueprint
 
-from src.classes.tools import write_log
+import sys, os, json
+import asyncio
+
+api_bp = Blueprint('api', __name__)
+
+# Ajoute le chemin du dossier parent à sys.path
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+# from tools.tools import write_log
 from encryption.rsa import ChiffrementRSA
 from encryption.aes import ChiffrementAES
 
-@app.route('/client/api/hello', methods=['GET'])
+# Import en relation avec la file MQTT
+from .mqtt import mqtt, publish_message
+
+#
+#   ROUTES
+#
+
+@api_bp.route('/client/api/hello', methods=['GET'])
 def hello():
     if request.method == 'GET':
         available = {
@@ -22,10 +37,10 @@ def hello():
 #
 
 #
-#   Creations
+#   CREATE
 #
 
-@app.route('/client/api/generate-rsa-key', methods=['GET'])
+@api_bp.route('/client/api/generate-rsa-key', methods=['GET'])
 def generateRSAKey():
     if request.method != 'GET':
         return jsonify({"error": "Method Not Allowed"}), 405
@@ -41,7 +56,7 @@ def generateRSAKey():
     else:
         return jsonify({'message': "Des clés RSA existent déjà sur le client."}), 200
     
-@app.route('/client/api/generate-aes-key', methods=['GET'])
+@api_bp.route('/client/api/generate-aes-key', methods=['GET'])
 def generateAESKey():
     if request.method != 'GET':
         return jsonify({"error": "Method Not Allowed"}), 405
@@ -59,10 +74,10 @@ def generateAESKey():
 
     
 #
-#   Checks
+#   VERIFY
 #
 
-@app.route('/client/api/check-rsa-key', methods=['GET'])
+@api_bp.route('/client/api/check-rsa-key', methods=['GET'])
 def checkRSAKey():
     if request.method != 'GET':
         return jsonify({"error": "Method Not Allowed"}), 405
@@ -75,7 +90,7 @@ def checkRSAKey():
     else:
         return jsonify({'message': "Aucune paire de clés RSA trouvée."}), 200
 
-@app.route('/client/api/check-aes-key', methods=['GET'])
+@api_bp.route('/client/api/check-aes-key', methods=['GET'])
 def checkAESKey():
     if request.method != 'GET':
         return jsonify({"error": "Method Not Allowed"}), 405
@@ -92,3 +107,79 @@ def checkAESKey():
 #   Opérations internes au client
 #
 
+
+#   START
+#   Opérations externes au client
+#
+
+#
+#   GET PUB KET CA
+#
+
+@api_bp.route('/client/api/get-pub-key-ca', methods=['GET'])
+async def getPubKeyCa():
+    if request.method != 'GET':
+        return jsonify({"error": "Method Not Allowed"}), 405
+    
+    message = {
+        'code' : 1,
+        'data' : None
+    }
+    
+    print("MQTT : Demande clé publique à la CA.")
+    publish_message(os.getenv("TOPIC_PUBLISH_CA"), json.dumps(message))
+    
+    return jsonify({'message': "ok"}), 200
+
+@api_bp.route('/client/api/print-pub-key-ca', methods=['GET'])
+async def printPubKeyCa():
+    if request.method != 'GET':
+        return jsonify({"error": "Method Not Allowed"}), 405
+    
+    rsaInstance = ChiffrementRSA()
+    caPubKey = rsaInstance.charger_str_cle_publique_ca()
+    if caPubKey == -1:
+        return jsonify({'message': "CLIENT: ERROR SERVER."}), 500
+    
+    message = {
+        'code' : 1,
+        'data' : caPubKey
+    }
+
+    return jsonify({'message': message}), 200
+
+#
+#   GET PUB KET SELLER
+#
+
+@api_bp.route('/client/api/get-pub-key-seller', methods=['GET'])
+def getPubKeySeller():
+    if request.method != 'GET':
+        return jsonify({"error": "Method Not Allowed"}), 405
+    
+    print("MQTT : Demande clé publique au vendeur.")
+    message = {
+        'code' : 1,
+        'data' : None
+    }
+    
+    publish_message(os.getenv("TOPIC_PUBLISH_SELLER"), json.dumps(message))
+    
+    return jsonify({'message': "ok"}), 200
+
+@api_bp.route('/client/api/print-pub-key-seller', methods=['GET'])
+def printPubKeySeller():
+    if request.method != 'GET':
+        return jsonify({"error": "Method Not Allowed"}), 405
+    
+    rsaInstance = ChiffrementRSA()
+    caPubKey = rsaInstance.charger_str_cle_publique_seller()
+    if caPubKey == -1:
+        return jsonify({'message': "CLIENT: ERROR SERVER."}), 500
+    
+    message = {
+        'code' : 1,
+        'data' : caPubKey
+    }
+
+    return jsonify({'message': message}), 200

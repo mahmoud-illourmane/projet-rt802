@@ -9,17 +9,32 @@ from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric import rsa, padding
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.backends import default_backend
+from cryptography.hazmat.primitives.asymmetric.rsa import RSAPublicKey
 
-from config import *
-from src.classes.tools import *
+from src.tools.tools import *
 
 class ChiffrementRSA:
 
     def __init__(self):
-        self.ca = CA_ADDRESS
-        self.dossier_cles = os.path.join(os.path.dirname(__file__), "..", "encryption")
-        if not os.path.exists(self.dossier_cles):
-            os.makedirs(self.dossier_cles)
+        self.ca = str(os.getenv("CA_GET_PUB_KEY"))
+        self.seller = str(os.getenv("SELLER_GET_PUB_KEY"))
+        self.dossier_cles = os.path.dirname(__file__)
+        self.create_empty_files()
+
+    def create_empty_files(self):
+        """
+        Crée les fichiers vides s'ils n'existent pas déjà.
+        """
+        ca_path = os.path.join(self.dossier_cles, self.ca)
+        seller_path = os.path.join(self.dossier_cles, self.seller)
+
+        if not os.path.exists(ca_path):
+            with open(ca_path, 'w') as f:
+                pass  # Fichier vide
+
+        if not os.path.exists(seller_path):
+            with open(seller_path, 'w') as f:
+                pass  # Fichier vide
 
     def generer_cles(self, taille_cle=2048, force=False):
         """
@@ -87,6 +102,48 @@ class ChiffrementRSA:
 
         return public_key
 
+    def charger_str_cle_publique_ca(self):
+        """
+        Retourne la clé publique de la CA.
+
+        Returns:
+            La clé publique RSA sous forme de chaîne de caractères ou -1 en cas d'erreur.
+        """
+        try:
+            with open(os.path.join(self.dossier_cles, str(os.getenv("CA_GET_PUB_KEY"))), "rb") as f:
+                public_key = serialization.load_pem_public_key(f.read(), backend=default_backend())
+                public_key_pem = public_key.public_bytes(
+                    encoding=serialization.Encoding.PEM,
+                    format=serialization.PublicFormat.SubjectPublicKeyInfo
+                ).decode('utf-8')
+            return public_key_pem
+        except Exception as e:
+            print(f"Une erreur s'est produite lors du chargement de la clé publique de la CA : {e}")
+            return -1
+    
+    def charger_str_cle_publique_seller(self):
+        """
+            Retourne la clé publique du vendeur.
+
+            Returns:
+                La clé publique RSA sous forme de chaîne de caractères ou -1 en cas d'erreur.
+        """
+        try:
+            with open(os.path.join(self.dossier_cles, str(os.getenv("SELLER_GET_PUB_KEY"))), "rb") as f:
+                public_key = serialization.load_pem_public_key(f.read(), backend=default_backend())
+                if isinstance(public_key, RSAPublicKey):  # Vérifie si la clé chargée est bien de type RSAPublicKey
+                    public_key_pem = public_key.public_bytes(
+                        encoding=serialization.Encoding.PEM,
+                        format=serialization.PublicFormat.SubjectPublicKeyInfo
+                    ).decode('utf-8')
+                    return public_key_pem
+                else:
+                    print("La clé chargée n'est pas une clé publique RSA valide.")
+                    return -1
+        except Exception as e:
+            print(f"Une erreur s'est produite lors du chargement de la clé publique du vendeur : {e}")
+            return -1
+
     def charger_cle_privee(self):
         """
         Charge la clé privée depuis le fichier "private_key.pem".
@@ -138,29 +195,45 @@ class ChiffrementRSA:
                 label=None
             )
         )
-
-    def recuperer_pub_ca(self):
+        
+    @staticmethod
+    def ecrire_pub_key_ca(pubKey):
         """
-        Cette méthode envoie une requête à CA pour récupérer sa clé publique.
+            Cette méthode permet d'enregistrer la clé publique de la ca sur le client.
         """
-        url = self.ca + CA_GET_PUB_KEY
-
         try:
-            response = requests.get(url)
-            response.raise_for_status()  # Si la réponse n'est pas OK, lève une exception
-
             # Chemin du fichier
-            file_path = os.path.join(os.path.dirname(__file__), "public_key_ca.pem")
+            file_path = os.path.join(os.path.dirname(__file__), str(os.getenv("CA_GET_PUB_KEY")))
 
             # Enregistrer la clé publique dans un fichier
             with open(file_path, "w") as f:
-                f.write(response.text)
+                f.write(pubKey)
 
             print(f"{COLOR_GREEN}Clé publique récupérée avec succès et enregistrée dans pub_key_ca.pem{COLOR_END}")
-            return response.text
+            return 0
         except requests.exceptions.RequestException as e:
             print(f"{COLOR_RED}Une erreur s'est produite lors de la requête : {e} {COLOR_END}")
             return None
+    
+    @staticmethod
+    def ecrire_pub_key_seller(pubKey):
+        """
+            Cette méthode permet d'enregistrer la clé publique de la ca sur le client.
+        """
+        try:
+            # Chemin du fichier
+            file_path = os.path.join(os.path.dirname(__file__), str(os.getenv("SELLER_GET_PUB_KEY")))
+
+            # Enregistrer la clé publique dans un fichier
+            with open(file_path, "w") as f:
+                f.write(pubKey)
+
+            print(f"{COLOR_GREEN}Clé publique récupérée avec succès et enregistrée dans pub_key_seller.pem{COLOR_END}")
+            return 0
+        except requests.exceptions.RequestException as e:
+            print(f"{COLOR_RED}Une erreur s'est produite lors de la requête : {e} {COLOR_END}")
+            return None
+
 
 
 # Exemple

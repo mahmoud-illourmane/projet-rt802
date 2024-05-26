@@ -1,46 +1,84 @@
-import paho.mqtt.client as mqtt
-import requests, json
+from flask import current_app
+from flask_mqtt import Mqtt
+from flask import Blueprint
 
-# Configuration du broker MQTT
-MQTT_BROKER_HOST = '194.57.103.203'
-MQTT_BROKER_PORT = 1883
-MQTT_KEEPALIVE_INTERVAL = 60
+import os, json
+import asyncio
 
+from encryption.rsa import ChiffrementRSA
 
-def start_mqtt_client():
-    mqtt_client = mqtt.Client()
+mqtt_bp = Blueprint('mqtt', __name__)
 
-    def on_connect(client, userdata, flags, rc):
-        print("Connected with result code "+str(rc))
-        # Abonnez-vous aux topics MQTT ici
-        mqtt_client.subscribe("projet/mahmoud")
+mqtt = Mqtt()
 
-    def on_message(client, userdata, msg):
-        print(msg.topic+" "+str(msg.payload))
-        # Traitez les messages MQTT ici
-        # Par exemple, vous pouvez les passer directement à une fonction de l'API Flask
-        handle_mqtt_message(msg.payload)
-
-    mqtt_client.on_connect = on_connect
-    mqtt_client.on_message = on_message
-
-    mqtt_client.connect(MQTT_BROKER_HOST, MQTT_BROKER_PORT, MQTT_KEEPALIVE_INTERVAL)
-
-    # Lancez la boucle de réception des messages MQTT
-    mqtt_client.loop_forever()
-
-def handle_mqtt_message(payload):
-    try:
-        # Convertir le payload JSON en dictionnaire Python
-        message_data = json.loads(payload)
+def configure_mqtt(app):
+    """
+        Configure les paramètres MQTT et lie les callbacks.
+    """
+    
+    mqtt.init_app(app)
+    
+    @mqtt.on_connect()
+    def handle_connect(client, userdata, flags, rc):    
+        on_mqtt_connect(client, userdata, flags, rc)
         
-        # Récupérer le code d'opération et la donnée du message
-        operation_code = message_data.get('operation_code')
-        data = message_data.get('data')
+    @mqtt.on_message()
+    def handle_mqtt_message(client, userdata, message):
+        on_mqtt_message(client, userdata, message)
 
-        # Envoyer les données du message MQTT à l'application Flask
-        response = requests.post('http://127.0.0.1:5000/handle-mqtt-message', json=message_data)
-        print(response.text)
+def on_mqtt_connect(client, userdata, flags, rc):
+    """
+        Logique à exécuter lors de la connexion à la file MQTT.
+    """
+    if rc == 0:
+        print("CLIENT : connexion à la file MQTT établie avec succès.")
+        mqtt.subscribe(os.getenv("TOPIC_SUB_CLIENT"))
+        mqtt.subscribe(os.getenv("TOPIC_SUB_CA"))
+    else:
+        print(f"Échec de la connexion à la file MQTT avec le code de retour {rc}")
 
-    except json.JSONDecodeError as e:
-        print("Erreur lors de la décodage du payload JSON:", e)
+def on_mqtt_message(client, userdata, message):
+    """
+        Logique à exécuter lorsqu'un message est reçu.
+    """
+    
+    payload = message.payload.decode()
+    print(f"VENDEUR : Message reçu sur le sujet {message.topic} : {payload}")
+
+    # Convertir le payload en un dictionnaire Python
+    message_data = json.loads(payload)
+
+    # Vérification que code est présent dans le message.
+    if 'code' in message_data:
+        code = message_data['code']
+        if code == 1: # Envoi de la clé publique au client
+            rsaInstance = ChiffrementRSA()
+            pubKey = rsaInstance.exporter_cle_publique_pem()
+            
+            message = {
+                'code': 1,
+                'data': pubKey 
+            }
+            publish_message(os.getenv("TOPIC_PUBLISH_CLIENT"), json.dumps(message))
+            print("MESSAGE PUBLIER.")
+        elif code == 2:
+            
+            print("Action pour le code 2")
+        else:
+            # Code inconnu
+            print("Code inconnu")
+    else:
+        # Code non trouvé dans le message
+        print("Code non trouvé dans le message")
+        
+
+def publish_message(topic, payload):
+    """
+        Publie un message sur un sujet MQTT donné.
+    """
+    mqtt.publish(topic, payload)
+
+# Routes MQTT sur le blueprint mqtt_bp
+@mqtt_bp.route('/mqtt/test', methods=['GET'])
+def mqtt_test():
+    return 'Test MQTT', 200

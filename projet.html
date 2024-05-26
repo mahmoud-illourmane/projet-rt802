@@ -131,6 +131,18 @@
 
                 <div class="ca-operations operations">
                     <h6 class="c_1">Opérations disponibles</h6>
+
+                    <div class="operation-btns-ca">
+                        <div class="operation-btn mb-2 bg_1">
+                            <label for="operation" class="form-label">Générer un certificat x509 autosigné</label>
+                            <button @click="generateSelfSignedCertificate" class="btn btn-sm btn-primary">Générer</button>
+                        </div>
+                        <div class="operation-btn mb-2 bg_1">
+                            <label for="operation" class="form-label">Générer un certificat x509 autosigné</label>
+                            <button @click="generateSelfSignedCertificate" class="btn btn-sm btn-primary">Générer</button>
+                        </div>
+                    </div>
+                    
                 </div>
 
                 <div class="ca-print print">
@@ -230,7 +242,12 @@
 
 
                 /*==== FONCTIONS ====*/
-                    /*== Vérifs ==*/
+                    /*== VERIFY ==*/
+
+                        /**
+                        *   Vérifie que le client dispose de 
+                        *   clé RSA.
+                        */
                         async function checkRsaKey() {
                             try {
                                 const result = await a_checkRsaKey();
@@ -240,6 +257,9 @@
                             }
                         }
 
+                        /**
+                        *   Vérifie que le client dispose d'une clé AES.
+                        */
                         async function checkAesKey() {
                             try {
                                 const result = await a_checkAesKey();
@@ -248,9 +268,36 @@
                                 console.error('Client : Erreur :', error);
                             }
                         }
-                    /*== END/Vérifs ==*/
+                    /*== END/VERIFY ==*/
 
-                    /*== Creations ==*/
+                    /*== GET ==*/
+                        
+                        /*
+                        *   Récupère la clé publique de la CA.
+                        */
+                        async function getPubKey() {
+                            console.log('Option sélectionnée :', selectedPubKeyReq.value);
+                            if (selectedPubKeyReq.value === "ca") {
+                                try {
+                                    const result = await a_getPubKeyCA();
+                                    printClient.value = result;
+                                } catch (error) {
+                                    console.error('Erreur :', error);
+                                }
+                            } 
+                            else if (selectedPubKeyReq.value === "vendeur") {
+                                try {
+                                    const result = await a_getPubKeyVendeur();
+                                    printClient.value = result;
+                                } catch (error) {
+                                    console.error('Erreur :', error);
+                                }
+                            }
+                            
+                        }
+                    /*== END/GET ==*/
+
+                    /*== CREATE ==*/
                         /*
                         *   Génère les clés RSA.
                         */
@@ -274,21 +321,12 @@
                                 console.error('Erreur :', error);
                             }
                         }
-
-                        function getPubKey() {
-                            
-                            console.log('Option sélectionnée :', selectedPubKeyReq.value);
-   
-                        }
-
-                    /*== END/Creations ==*/
+                    /*== END/CREATE ==*/
 
                 /*==== END/FONCTIONS ====*/
 
                 /*==== REQUETES AXIOS ====*/
-                    
-                    /*== Vérifs ==*/
-
+                    /*== VERIFY ==*/
                         /*
                         *   Vérifie que le serveur du client est allumé.
                         */
@@ -306,7 +344,6 @@
                                 console.log('CLIENT : Erreur lors de la requête API :', err.message);
                             }
                         }
-
 
                         /*
                         *   Vérifie la présence d'une paire de clé RSA sur le client.
@@ -343,11 +380,68 @@
                                 console.log('CLIENT : Erreur lors de la requête API :', err.message);
                             } finally { }
                         }
+                    /*== END/VERIFY ==*/
 
-                    /*== END/Vérifs ==*/
+                    /*== GET ==*/
+                        
+                        /*
+                        *   Récupère la clé publique de la CA sur le client.
+                        *   Et l'affiche sur la vue avec une deuxième requête.
+                        */
+                        async function a_getPubKeyCA() {
+                            try {
+                                const response = await axios.get('http://127.0.0.1:5001/client/api/get-pub-key-ca');
+                                const statusCode = response.status;
+                        
+                                if (statusCode === 200) {
+                                    const responsePrintKey = await axios.get('http://127.0.0.1:5001/client/api/print-pub-key-ca');
+                                    const statusCodePrintKey = responsePrintKey.status;
+                        
+                                    if (statusCodePrintKey === 200) {
+                                        return responsePrintKey.data.message.data;
+                                    } else {
+                                        throw new Error(responsePrintKey.data.error);
+                                    }
+                                } else {
+                                    throw new Error(response.data.error);
+                                }
+                            } catch (err) {
+                                console.log('CLIENT : Erreur lors de la requête API :', err.message);
+                                return -1; // ou une autre valeur pour indiquer une erreur
+                            }
+                        }
 
-                    /*== Creations ==*/
-                    
+                        /*
+                        *   Récupère la clé publique du vendeur sur le client.
+                        *   Et l'affiche sur la vue avec une deuxième requête.
+                        */
+                        async function a_getPubKeyVendeur() {
+                            try {
+                                const response = await axios.get('http://127.0.0.1:5001/client/api/get-pub-key-seller');
+                                const statusCode = response.status;
+                        
+                                if (statusCode === 200) {
+                                    const responsePrintKey = await axios.get('http://127.0.0.1:5001/client/api/print-pub-key-seller');
+                                    const statusCodePrintKey = responsePrintKey.status;
+                        
+                                    if (statusCodePrintKey === 200) {
+                                        return responsePrintKey.data.message.data;
+                                    } else {
+                                        throw new Error(responsePrintKey.data.error);
+                                    }
+                                } else {
+                                    throw new Error(response.data.error);
+                                }
+                            } catch (err) {
+                                console.log('CLIENT : Erreur lors de la requête API :', err.message);
+                                return -1; // ou une autre valeur pour indiquer une erreur
+                            }
+                        }
+                        
+                    /*== END/GET ==*/
+
+
+                    /*== CREATE ==*/
                         /*
                         *   Génère une paire de clé RSA.
                         */
@@ -384,7 +478,7 @@
                             } finally { }
                         }
 
-                    /*== END/Creations ==*/
+                    /*== END/CREATE ==*/
 
                     
 
@@ -422,7 +516,9 @@
                 let caAvailable = ref(false);
 
                 /*==== FONCTIONS ====*/
-                
+                    function generateSelfSignedCertificate() {
+                        
+                    }
                 /*==== END/FONCTIONS ====*/
 
                 /*==== REQUETES AXIOS ====*/
@@ -452,6 +548,9 @@
 
                 return {
                     caAvailable,
+
+                    // Fonctions
+                    generateSelfSignedCertificate,
                 }
             }
         }).mount('#ca');
