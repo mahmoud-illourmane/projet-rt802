@@ -37,9 +37,9 @@
     /*== END/Sizes ==*/
 
     /*== Colors ==*/
-        .c_1 { color: #34383d; }
-        .c_2 { color: #d37484; }
-        .c_3 { color: #5b875e; }
+        .c_1 { color: #34383d; text-decoration: none !important; }
+        .c_2 { color: #d37484; text-decoration: none !important; }
+        .c_3 { color: #5b875e; text-decoration: none !important; }
 
         .bg_1 { background-color: #d6d2da; }
         .bg_2 { background-color: #d2d4c3; }
@@ -47,6 +47,13 @@
 /*==== END/CONSTS ====*/
 
 /*== UI/UX ==*/
+    .div-flex {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        justify-self: center;
+    }
+
     .vendeur-off, .client-off, .ca-off,
     .client-header, .vendeur-header, .ca-header {
         display: inline-flex;
@@ -74,6 +81,7 @@
     .vendeur { background-color: #d4ebe6; }
     .ca {
         margin-top: 20px;
+        margin-bottom: 20px;
         background-color: #dfd9eb;
     }
     

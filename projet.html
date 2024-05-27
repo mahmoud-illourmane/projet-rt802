@@ -41,9 +41,9 @@
 
     <div class="projet">
         <div class="client-vendeur">
+            
+            <!-- CLIENT -->
             <div class="client" id="client">
-
-                <!-- CLIENT -->
                 <div v-if="clientAvailable" class="client-content">
                     <div class="client-header">
                         <span class="material-icons s_XL">person</span>
@@ -59,9 +59,16 @@
                                 <button @click="generateRsaKey" class="btn btn-sm btn-primary">Générer</button>
                             </div>
 
-                            <div class="operation-btn mb-2 bg_1">
-                                <label for="operation" class="form-label">Générer une clé AES</label>
-                                <button @click="generateAesKey" class="btn btn-sm btn-primary">Générer</button>
+                            <div class="div-flex">
+                                <div class="operation-btn mb-2 bg_2">
+                                    <label for="operation" class="form-label">Générer une clé AES</label>
+                                    <button @click="generateAesKey" class="btn btn-sm btn-primary">Générer</button>
+                                </div>
+    
+                                <div class="operation-btn mb-2 bg_1">
+                                    <label for="operation" class="form-label">Échanges de secrets</label>
+                                    <button @click="secretExchangeCa" class="btn btn-sm btn-primary">CA</button>
+                                </div>
                             </div>
 
                             <div class="operation-btn mb-2 bg_2">
@@ -85,7 +92,8 @@
                     </div>
 
                     <div class="client-print print">
-                        <h6 class="c_1">Sortie</h6>
+                        <h6 class="c_1">Sortie</h6> 
+                        <button @click="cleanPrintClient" class="material-icons c_2">cleaning_services</button>
                         <div class="print-final">
                             {{ printClient }}
                         </div>
@@ -111,6 +119,10 @@
 
                     <div class="vendeur-print print">
                         <h6 class="c_1">Sortie</h6>
+                        <button @click="cleanPrintVendeur" class="material-icons c_2">cleaning_services</button>
+                        <div class="print-final">
+                            {{ printVendeur }}
+                        </div>
                     </div>
 
                 </div>
@@ -134,8 +146,8 @@
 
                     <div class="operation-btns-ca">
                         <div class="operation-btn mb-2 bg_1">
-                            <label for="operation" class="form-label">Générer un certificat x509 autosigné</label>
-                            <button @click="generateSelfSignedCertificate" class="btn btn-sm btn-primary">Générer</button>
+                            <label for="operation" class="form-label">Vérifier la présence d'un certificat autosigné</label>
+                            <button @click="checkSelfSignedCertificate" class="btn btn-sm btn-primary">Vérifier</button>
                         </div>
                         <div class="operation-btn mb-2 bg_1">
                             <label for="operation" class="form-label">Générer un certificat x509 autosigné</label>
@@ -147,6 +159,10 @@
 
                 <div class="ca-print print">
                     <h6 class="c_1">Sortie</h6>
+                    <button @click="cleanPrintCa" class="material-icons c_2">cleaning_services</button>
+                    <div class="print-final">
+                        {{ printCa }}
+                    </div>
                 </div>
             </div>
             <div v-else class="ca-off">
@@ -154,15 +170,15 @@
                 <h6>Veuillez allumer le serveur de la CA.</h6>
             </div>
         </div> <!-- CA -->
+
     </div>
-    
 
     <!-- Bootsrap CDN -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
 
     <!-- VueJS3 -->
     <script type="module">
-        import { createApp, onMounted, ref } from 'vue'
+        import { createApp, onMounted, watchEffect, ref } from 'vue'
         
         // Main app
         createApp({
@@ -191,9 +207,14 @@
                 let error = ref('');
 
                 let vendeurAvailable = ref(false);
+                let printVendeur = ref('');
 
                 /*==== FONCTIONS ====*/
-                
+                    /*== TOOLS ==*/
+                        function cleanPrintVendeur() {
+                            printVendeur.value = '';
+                        }
+                    /*== TOOLS ==*/
                 /*==== END/FONCTIONS ====*/
 
                 /*==== REQUETES AXIOS ====*/
@@ -225,6 +246,10 @@
 
                 return {
                     vendeurAvailable,
+                    printVendeur,
+
+                    // Fonctions
+                    cleanPrintVendeur,
                 }
             }
         }).mount('#vendeur');
@@ -237,13 +262,18 @@
 
                 let clientAvailable = ref(false);
                 let selectedPubKeyReq = ref(null);
+
                 // Résultat d'une requête
                 let printClient = ref('');
 
-
                 /*==== FONCTIONS ====*/
-                    /*== VERIFY ==*/
+                    /*== TOOLS ==*/
+                        function cleanPrintClient() {
+                            printClient.value = '';
+                        }
+                    /*== TOOLS ==*/
 
+                    /*== VERIFY ==*/
                         /**
                         *   Vérifie que le client dispose de 
                         *   clé RSA.
@@ -271,26 +301,32 @@
                     /*== END/VERIFY ==*/
 
                     /*== GET ==*/
-                        
                         /*
-                        *   Récupère la clé publique de la CA.
+                        *   Récupère la clé publique de la CA ou du Vendeur.
                         */
                         async function getPubKey() {
-                            console.log('Option sélectionnée :', selectedPubKeyReq.value);
                             if (selectedPubKeyReq.value === "ca") {
                                 try {
                                     const result = await a_getPubKeyCA();
-                                    printClient.value = result;
+                                    if(result != -1){
+                                        printClient.value = result;
+                                    } else {
+                                        printClient.value = "ERREUR SERVEUR.";
+                                    }
                                 } catch (error) {
-                                    console.error('Erreur :', error);
+                                    printClient.value = "ERREUR SERVEUR.";
                                 }
                             } 
                             else if (selectedPubKeyReq.value === "vendeur") {
                                 try {
                                     const result = await a_getPubKeyVendeur();
-                                    printClient.value = result;
+                                    if(result != -1){
+                                        printClient.value = result;
+                                    } else {
+                                        printClient.value = "ERREUR SERVEUR.";
+                                    }
                                 } catch (error) {
-                                    console.error('Erreur :', error);
+                                    printClient.value = "ERREUR SERVEUR.";
                                 }
                             }
                             
@@ -321,11 +357,26 @@
                                 console.error('Erreur :', error);
                             }
                         }
+
+                        /**
+                        *   Permet de faire l'échange du secret
+                        *   entre le client et la CA.
+                        */
+                        async function secretExchangeCa() {
+                            try {
+                                const result = await a_secretExchangeCa();
+                                printClient.value = result;
+                            } catch (error) {
+                                printClient.value = error;
+                            }
+                        }
                     /*== END/CREATE ==*/
 
                 /*==== END/FONCTIONS ====*/
 
+                /*==== ************** ====*/
                 /*==== REQUETES AXIOS ====*/
+                /*==== ************** ====*/
                     /*== VERIFY ==*/
                         /*
                         *   Vérifie que le serveur du client est allumé.
@@ -390,9 +441,12 @@
                         */
                         async function a_getPubKeyCA() {
                             try {
+                                // J'effectue d'abord la requête qui utilise la file mqtt.
                                 const response = await axios.get('http://127.0.0.1:5001/client/api/get-pub-key-ca');
                                 const statusCode = response.status;
-                        
+                                
+                                // Si aucune erreur j'effectue une deuxième requête pour afficher la clé.
+                                // Car je ne peux pas attendre la file coté serveur.
                                 if (statusCode === 200) {
                                     const responsePrintKey = await axios.get('http://127.0.0.1:5001/client/api/print-pub-key-ca');
                                     const statusCodePrintKey = responsePrintKey.status;
@@ -400,10 +454,10 @@
                                     if (statusCodePrintKey === 200) {
                                         return responsePrintKey.data.message.data;
                                     } else {
-                                        throw new Error(responsePrintKey.data.error);
+                                        return responsePrintKey.data.error;
                                     }
                                 } else {
-                                    throw new Error(response.data.error);
+                                    return responsePrintKey.data.error;
                                 }
                             } catch (err) {
                                 console.log('CLIENT : Erreur lors de la requête API :', err.message);
@@ -478,6 +532,24 @@
                             } finally { }
                         }
 
+                        /*
+                        *   Echange un secret entre le client et la CA.
+                        */
+                        async function a_secretExchangeCa() {
+                            try {
+                                const response = await axios.get('http://127.0.0.1:5001/client/api/secret-exchange-ca');
+                                const statusCode = response.status;
+                        
+                                if (statusCode == 200) {
+                                    return response.data.message;
+                                } else {
+                                    return response.data.error;
+                                }
+                            } catch (err) {
+                                console.log('CLIENT : Erreur lors de la requête API :', err.message);
+                            }
+                        }                        
+
                     /*== END/CREATE ==*/
 
                     
@@ -495,10 +567,14 @@
                     selectedPubKeyReq,
                     printClient,
 
+                    // Outils
+                    cleanPrintClient,
+
                     // Fonctions Créations
                     generateRsaKey,
                     generateAesKey,
                     getPubKey,
+                    secretExchangeCa,
 
                     // Fonctions Vérifs
                     checkRsaKey,
@@ -515,9 +591,32 @@
 
                 let caAvailable = ref(false);
 
+                let printCa = ref('')
+
+
                 /*==== FONCTIONS ====*/
-                    function generateSelfSignedCertificate() {
-                        
+                    /*== TOOLS ==*/
+                        function cleanPrintCa() {
+                            printCa.value = '';
+                        }
+                    /*== TOOLS ==*/
+
+                    async function generateSelfSignedCertificate() {
+                        try {
+                            const result = await a_generateSelfSignedCertificate();
+                            printCa.value = result;
+                        } catch (error) {
+                            console.error('Erreur :', error);
+                        }
+                    }
+
+                    async function checkSelfSignedCertificate() {
+                        try {
+                            const result = await a_checkSelfSignedCertificate();
+                            printCa.value = result;
+                        } catch (error) {
+                            console.error('Erreur :', error);
+                        }
                     }
                 /*==== END/FONCTIONS ====*/
 
@@ -540,6 +639,44 @@
                             console.log('CA : Erreur lors de la requête API :', err.message);
                         } finally {}
                     }
+
+                    /*
+                    *   Génère un certificat autosigné.
+                    */
+                    async function a_generateSelfSignedCertificate() {
+                        try {
+                            const response = await axios.get('http://127.0.0.1:5000/ca/create-self-certificat');
+                            const statusCode = response.status;
+
+                            if(statusCode == 200) {
+                                return response.data.data;
+                            } else {
+                                console.log('CA : Erreur lors de la requête API :', err.message);
+                                return -1;
+                            }
+                        } catch (err) {
+                            console.log('CA : Erreur lors de la requête API :', err.message);
+                        } finally {}
+                    }
+
+                    /*
+                    *   Vérifie que la CA possède son certificat autosigné.
+                    */
+                    async function a_checkSelfSignedCertificate() {
+                        try {
+                            const response = await axios.get('http://127.0.0.1:5000/ca/check-ca-crl');
+                            const statusCode = response.status;
+
+                            if(statusCode == 200) {
+                                return response.data.data;
+                            } else {
+                                console.log('CA : Erreur lors de la requête API :', err.message);
+                                return -1;
+                            }
+                        } catch (err) {
+                            console.log('CA : Erreur lors de la requête API :', err.message);
+                        } finally {}
+                    }
                 /*==== END/REQUETES AXIOS ====*/
 
                 onMounted(async () => {
@@ -549,8 +686,13 @@
                 return {
                     caAvailable,
 
+                    printCa,
+
                     // Fonctions
+                    cleanPrintCa,
+
                     generateSelfSignedCertificate,
+                    checkSelfSignedCertificate,
                 }
             }
         }).mount('#ca');

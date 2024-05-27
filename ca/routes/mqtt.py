@@ -4,8 +4,6 @@ from flask import Blueprint
 
 import os, json
 
-from encryption.rsa import ChiffrementRSA
-
 mqtt_bp = Blueprint('mqtt', __name__)
 
 mqtt = Mqtt()
@@ -37,37 +35,59 @@ def on_mqtt_connect(client, userdata, flags, rc):
 
 def on_mqtt_message(client, userdata, message):
     """
-    Logique à exécuter lorsqu'un message est reçu.
+        Logique à exécuter lorsqu'un message est reçu.
     """
     payload = message.payload.decode()
-    print(f"Message reçu sur le sujet {message.topic} : {payload}")
+    
+    # print(f"Message reçu sur le sujet {message.topic} : {payload}")
+    print(f"Message reçu sur le sujet {message.topic}")
 
-    # Convertir le payload en un dictionnaire Python
+    # Convertir le payload en json
     message_data = json.loads(payload)
 
-    # Vérifier le code et exécuter des actions en conséquence
-    if 'code' in message_data:
+    if message.topic == str(os.getenv("TOPIC_SUB_CLIENT")):
+        # Vérifie que la clé code est présente dans le message
+        if 'code' in message_data:
+            from app import rsa_instance, aes_instance
+            
+            code = message_data['code']
+            if code == 1: # Envoi de la clé publique au client
+                pubKey = rsa_instance.get_my_pub_key_serialized()
+                
+                message = {
+                    'code': 1,
+                    'data': pubKey 
+                }
+                publish_message(os.getenv("TOPIC_PUBLISH_CLIENT"), json.dumps(message))
+                print("TOPIC CLIENT : MESSAGE CODE 1 PUBLIE.")
+            
+            elif code == 2: # Échange du secret avec le client
+                print(f"Je recois une demande de secret.")
+                
+                # J'enlève le base64
+                rsa_cipher = rsa_instance.decrypt_cipher_base64(message_data['data'])
+                decrypted_aes_key = rsa_instance.decrypter(rsa_cipher)
+                
+                print(decrypted_aes_key)
+                aes_instance.insert_aes(decrypted_aes_key, "client")
+                
+                print("\nTOPIC CLIENT : SECRET RECU.")
+            else:
+                # Code inconnu
+                print("Code inconnu")
+        else:
+            # Code non trouvé dans le message
+            print("Code non trouvé dans le message")
+            
+    elif message.topic == str(os.getenv("TOPIC_SUB_SELLER")):
         code = message_data['code']
-        if code == 1: # Envoi de la clé publique au client
-            rsaInstance = ChiffrementRSA()
-            pubKey = rsaInstance.exporter_cle_publique_pem()
-            
-            message = {
-                'code': 1,
-                'data': pubKey 
-            }
-            publish_message(os.getenv("TOPIC_PUBLISH_CLIENT"), json.dumps(message))
-            print("MESSAGE PUBLIER.")
+        if code == 1: 
+            print("Action pour le code 1")
         elif code == 2:
-            
             print("Action pour le code 2")
         else:
             # Code inconnu
             print("Code inconnu")
-    else:
-        # Code non trouvé dans le message
-        print("Code non trouvé dans le message")
-
 
 def publish_message(topic, payload):
     """

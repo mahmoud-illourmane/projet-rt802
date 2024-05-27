@@ -8,10 +8,6 @@ api_bp = Blueprint('api', __name__)
 # Ajoute le chemin du dossier parent à sys.path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-# from tools.tools import write_log
-from encryption.rsa import ChiffrementRSA
-from encryption.aes import ChiffrementAES
-
 # Import en relation avec la file MQTT
 from .mqtt import publish_message
 
@@ -42,32 +38,44 @@ def hello():
         "error": "Method Not Allowed"
     }), 405
 
-@api_bp.route('/ca/get-public-key', methods=['GET'])
-def get_public_key():
+#
+#   VERIFY
+#
+
+@api_bp.route('/ca/check-ca-crl', methods=['GET'])
+def check_ca_crl():
     if request.method == 'GET':
-        chiffrement = ChiffrementRSA()
-        public_key_pem = chiffrement.exporter_cle_publique_pem()
-        return jsonify(public_key_pem + "\n"), 200
+        from app import crl_instance
+        if crl_instance.crl == None:
+            return jsonify({"data": "No CRL FOUND"}), 200
+        
+        my_str_crl = crl_instance.crl.decode('utf-8')
+        return jsonify({"data": "Certificat trouvé : " + my_str_crl}), 200
     else:
         return jsonify({"error": "Method Not Allowed"}), 405
 
+#   END
+#   VERIFY
+#
 
-@api_bp.route('/ca/create-certificat', methods=['POST'])
-def create_csr():
-    if request.method == 'POST':
-        data = request.json
+@api_bp.route('/ca/get-public-key', methods=['GET'])
+def get_public_key():
+    if request.method == 'GET':
+        from app import rsa_instance
         
-        if data:
-            print("Données reçues :")
-            print(f"nom : {data["common_name"]}")
-            print(f"organization : {data["organization"]}")
-            print(f"country : {data["country"]}")
-            print(f"public_key : {data["public_key"]}")
-            
-            # for key, value in data.items():
-            #     print(f"{key}: {value}")
-            return "Données reçues avec succès", 200
-        else:
-            return "Aucune donnée reçue", 400
+        public_key_str = rsa_instance.exporter_cle_publique_str()
+        return jsonify({"data": public_key_str}), 200
+    else:
+        return jsonify({"error": "Method Not Allowed"}), 405
+
+@api_bp.route('/ca/create-self-certificat', methods=['GET'])
+def create_self_csr():
+    if request.method == 'GET':
+        from app import crl_instance
+        
+        my_crl = crl_instance.generer_certificat_autosigne()
+        my_str_crl = my_crl.decode('utf-8')
+    
+        return jsonify({"data": my_str_crl}), 200
     else:
         return jsonify({"error": "Method Not Allowed"}), 405

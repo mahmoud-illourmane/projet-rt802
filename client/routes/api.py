@@ -9,10 +9,6 @@ api_bp = Blueprint('api', __name__)
 # Ajoute le chemin du dossier parent à sys.path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-# from tools.tools import write_log
-from encryption.rsa import ChiffrementRSA
-from encryption.aes import ChiffrementAES
-
 # Import en relation avec la file MQTT
 from .mqtt import mqtt, publish_message
 
@@ -44,12 +40,12 @@ def hello():
 def generateRSAKey():
     if request.method != 'GET':
         return jsonify({"error": "Method Not Allowed"}), 405
-        
-    chiffrementRSA = ChiffrementRSA()
-    check_rsa = chiffrementRSA.a_paire_de_cles_rsa()
     
+    from app import rsa_instance
+    
+    check_rsa = rsa_instance.get_my_pub_key()
     if not check_rsa:
-        if chiffrementRSA.generer_cles() == -1:
+        if rsa_instance.generer_cles() == -1:
             return jsonify({'error': "Erreur serveur."}), 500
         else:
             return jsonify({'message': "Clés générés avec succès."}), 200
@@ -60,12 +56,12 @@ def generateRSAKey():
 def generateAESKey():
     if request.method != 'GET':
         return jsonify({"error": "Method Not Allowed"}), 405
-        
-    chiffrementAES = ChiffrementAES()
-    check_aes = chiffrementAES.a_cle_aes()
     
+    from app import aes_instance
+    
+    check_aes = aes_instance.get_my_aes_key()
     if not check_aes:
-        if chiffrementAES.generate_key() == -1:
+        if aes_instance.generate_key() == -1:
             return jsonify({'error': "Erreur serveur."}), 500
         else:
             return jsonify({'message': "Clé AES générée avec succès."}), 200
@@ -80,10 +76,10 @@ def generateAESKey():
 @api_bp.route('/client/api/check-rsa-key', methods=['GET'])
 def checkRSAKey():
     if request.method != 'GET':
-        return jsonify({"error": "Method Not Allowed"}), 405
-        
-    chiffrementRSA = ChiffrementRSA()
-    check_rsa = chiffrementRSA.a_paire_de_cles_rsa()
+        return jsonify({"error": "Method Not Allowed"}), 405    
+    from app import rsa_instance
+    
+    check_rsa = rsa_instance.get_my_pub_key()
     
     if check_rsa:
         return jsonify({'message': "Clés RSA présentes."}), 200
@@ -94,10 +90,9 @@ def checkRSAKey():
 def checkAESKey():
     if request.method != 'GET':
         return jsonify({"error": "Method Not Allowed"}), 405
-        
-    chiffrementAES = ChiffrementAES()
-    check_aes = chiffrementAES.a_cle_aes()
+    from app import aes_instance
     
+    check_aes = aes_instance.get_my_aes_key()
     if check_aes:
         return jsonify({'message': "Clé AES présente."}), 200
     else:
@@ -118,6 +113,10 @@ def checkAESKey():
 
 @api_bp.route('/client/api/get-pub-key-ca', methods=['GET'])
 async def getPubKeyCa():
+    """
+        Cette route permet de demander la clé publique de la CA.
+        Le client publie sur la file MQTT la demande.
+    """
     if request.method != 'GET':
         return jsonify({"error": "Method Not Allowed"}), 405
     
@@ -126,27 +125,74 @@ async def getPubKeyCa():
         'data' : None
     }
     
-    print("MQTT : Demande clé publique à la CA.")
+    print("CLIENT : Demande clé publique à la CA sur MQTT.")
     publish_message(os.getenv("TOPIC_PUBLISH_CA"), json.dumps(message))
     
     return jsonify({'message': "ok"}), 200
 
 @api_bp.route('/client/api/print-pub-key-ca', methods=['GET'])
 async def printPubKeyCa():
+    """
+        Cette route sert juste à afficher la clé publique de la CA
+        sur la vue.
+    """
     if request.method != 'GET':
         return jsonify({"error": "Method Not Allowed"}), 405
+    from app import rsa_instance
+
+    await asyncio.sleep(1)  # Attend une seconde pour être sur que la clé est bien stocké dans la classe.
+    caPubKey = rsa_instance.get_rsa_key("ca", True)
     
-    rsaInstance = ChiffrementRSA()
-    caPubKey = rsaInstance.charger_str_cle_publique_ca()
-    if caPubKey == -1:
-        return jsonify({'message': "CLIENT: ERROR SERVER."}), 500
+    if not caPubKey:
+        return jsonify({'error': "CLIENT: Vous n'avez pas la clé publique de la CA."}), 204
+    elif caPubKey == -1:
+        return jsonify({'error': "CLIENT: Erreur lors de l'extraction de la clé publique de la CA."}), 500
     
     message = {
         'code' : 1,
         'data' : caPubKey
     }
-
     return jsonify({'message': message}), 200
+
+#
+#   SECRET EXCHANGE CA
+#
+
+@api_bp.route('/client/api/secret-exchange-ca', methods=['GET'])
+async def secretExchangeCa():
+    """
+        Cette route, permet d'entamer le processus d'échange
+        d'un secret entre le client et la CA.
+    """
+    if request.method != 'GET':
+        return jsonify({"error": "Method Not Allowed"}), 405
+    from app import rsa_instance, aes_instance
+
+    clientPubKey = rsa_instance.get_my_pub_key_serialized()
+    if clientPubKey == None:
+        return jsonify({'message': "ERROR SERVER: La clé publique du client est introuvable."}), 200
+    
+    caPubKey = rsa_instance.get_rsa_key("ca")
+    if caPubKey == None:
+        return jsonify({'message': "ERROR SERVER: La clé publique de la CA est introuvable."}), 200
+    
+    clientAesKey = aes_instance.get_my_aes_key()
+    if clientAesKey == None:
+        return jsonify({'message': "ERROR SERVER: La clé AES du client est introuvable."}), 200
+    
+    aes_cipher = rsa_instance.crypter(clientAesKey, caPubKey, True)
+    if aes_cipher == None:
+        return jsonify({'message': "ERROR SERVER: La clé AES du client n'a pas pu être chiffré."}), 200
+    
+    message = {
+        'code' : 2,
+        'data' : aes_cipher
+    }
+    
+    publish_message(os.getenv("TOPIC_PUBLISH_CA"), json.dumps(message))
+    
+    print(f"\n\n CLE AES CLIENT: ", clientAesKey)
+    return jsonify({'message': "Le secrêt vient d'être publié sur la file MQTT."}), 200
 
 #
 #   GET PUB KET SELLER
@@ -171,12 +217,12 @@ def getPubKeySeller():
 def printPubKeySeller():
     if request.method != 'GET':
         return jsonify({"error": "Method Not Allowed"}), 405
+    from app import rsa_instance
     
-    rsaInstance = ChiffrementRSA()
-    caPubKey = rsaInstance.charger_str_cle_publique_seller()
+    caPubKey = rsa_instance.exporter_cle_publique_str()
     if caPubKey == -1:
         return jsonify({'message': "CLIENT: ERROR SERVER."}), 500
-    
+
     message = {
         'code' : 1,
         'data' : caPubKey

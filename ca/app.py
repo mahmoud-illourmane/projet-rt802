@@ -16,6 +16,11 @@ from routes.mqtt import configure_mqtt
 from routes.api import api_bp
 from routes.mqtt import mqtt_bp
 
+# Classes RSA AES & Certificat
+from src.classes.encryption.rsa import ChiffrementRSA
+from src.classes.encryption.aes import ChiffrementAES
+from src.classes.crl.certificat import Certificat
+
 # Configuration des logs pour l'utilisation du Launcher.py
 log_dir = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'client.log')
 logging.basicConfig(filename=log_dir, level=logging.DEBUG)
@@ -34,7 +39,12 @@ load_dotenv()
 app.config['MQTT_BROKER_URL'] = os.getenv("MQTT_BROKER_URL")
 app.config['MQTT_BROKER_PORT'] = 1883
 app.config['MQTT_REFRESH_TIME'] = os.getenv("MQTT_REFRESH_TIME") 
-    
+
+# Instanciation des classes RSA et AES
+rsa_instance = ChiffrementRSA()
+aes_instance = ChiffrementAES()
+crl_instance = Certificat()
+
 """
 |
 |   Ce code constitue le point d'amorçage du serveur 

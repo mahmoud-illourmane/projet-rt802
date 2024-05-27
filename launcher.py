@@ -69,6 +69,10 @@ while True:
         print("Arrêt du programme.")
         # Indiquer aux threads de s'arrêter
         exit_flag.set()
+        # Attendre que tous les threads se terminent
+        for thread in threads:
+            thread.join()
         sys.exit()
+
     else:
         print("Choix invalide. Veuillez réessayer.")

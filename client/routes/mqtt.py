@@ -3,9 +3,6 @@ from flask_mqtt import Mqtt
 from flask import Blueprint
 
 import os, json
-import asyncio
-
-from encryption.rsa import ChiffrementRSA
 
 mqtt_bp = Blueprint('mqtt', __name__)
 
@@ -43,20 +40,25 @@ def on_mqtt_message(client, userdata, message):
     """
     payload = message.payload.decode()
     
-    print(f"Message reçu sur le sujet {message.topic} : {payload}")
+    # print(f"Message reçu sur le sujet {message.topic} : {payload}")
+    print(f"Message reçu sur le sujet {message.topic}")
     message_data = json.loads(payload)
     
     if message.topic == str(os.getenv("TOPIC_SUB_CA")):
         if 'code' in message_data:
-            rsaInstance = ChiffrementRSA()
+            from app import rsa_instance
+            
             code = message_data['code']
             if code == 1: # Réception de la clé publique de la CA
-                if rsaInstance.ecrire_pub_key_ca(message_data['data']) != 0:
-                    print("CLIENT: Error getting pubKey from CA")
-                    
-            elif code == 2: # Réception de la clé publique du vendeur
-                if rsaInstance.ecrire_pub_key_seller(message_data['data']) != 0:
-                    print("CLIENT: Error getting pubKey from SELLER")
+                pubKeyCa = rsa_instance.receive_pub_key(message_data['data'])
+                
+                # Vérification si l'objet pubKeyCa est créé avec succès
+                if pubKeyCa:
+                    rsa_instance.insert_rsa_key(pubKeyCa, "ca")
+                else:
+                    print("Erreur lors de la désérialisation de la clé publique")
+            elif code == 2: # Réception autre  
+                print("TODO")
             else:
                 # Code inconnu
                 print("Code inconnu")
@@ -66,13 +68,14 @@ def on_mqtt_message(client, userdata, message):
     
     elif message.topic == str(os.getenv("TOPIC_SUB_SELLER")):
         if 'code' in message_data:
-            rsaInstance = ChiffrementRSA()
+            from app import rsa_instance
+            
             code = message_data['code']
             if code == 1: # Réception de la clé publique du vendeur
-                if rsaInstance.ecrire_pub_key_seller(message_data['data']) != 0:
+                if rsa_instance.insert_rsa_key(rsa_instance.receive_pub_key(message_data['data']), "ca") != 0:
                     print("CLIENT: Error getting pubKey from SELLER")
                     
-            elif code == 1: 
+            elif code == 2: 
                 print("Action pour le code 2")
             else:
                 # Code inconnu
@@ -81,7 +84,6 @@ def on_mqtt_message(client, userdata, message):
             # Code non trouvé dans le message
             print("Code non trouvé dans le message")
         
-
 def publish_message(topic, payload):
     """
         Publie un message sur un sujet MQTT donné.
