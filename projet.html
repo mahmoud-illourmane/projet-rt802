@@ -54,6 +54,24 @@
                         <h6 class="c_1">Opérations disponibles</h6>
 
                         <div class="operations-btns">
+                            <div class="operation-btn mb-2 bg_2">
+                                <label for="operation" class="form-label">Obtenir la clé publique</label>
+                                <select class="form-select" aria-label="Default select example" v-model="selectedPubKeyReq">
+                                    <option selected disabled>Choisir</option>
+                                    <option value="vendeur">Vendeur</option>
+                                    <option value="ca">Ca</option>
+                                </select>
+                                <button class="btn btn-sm btn-success mt-2" type="button" :disabled="selectedPubKeyReq === null" @click="getPubKey">Obtenir</button>
+                            </div>
+
+                            <div class="operation-btn mb-2 bg_2">
+                                <label for="operation" class="form-label">Vérifier la disponibilité des clés</label>
+                                <div class="btns-flex">
+                                    <button @click="checkRsaKey" class="btn btn-sm btn-primary" type="button">RSA</button>
+                                    <button @click="checkAesKey" class="btn btn-sm btn-success" type="button">AES</button>
+                                </div>
+                            </div>
+                            
                             <div class="operation-btn mb-2 bg_1">
                                 <label for="operation" class="form-label">Générer une paire de clés RSA 2048</label>
                                 <button @click="generateRsaKey" class="btn btn-sm btn-primary">Générer</button>
@@ -70,30 +88,12 @@
                                     <button @click="secretExchangeCa" class="btn btn-sm btn-primary">CA</button>
                                 </div>
                             </div>
-
-                            <div class="operation-btn mb-2 bg_2">
-                                <label for="operation" class="form-label">Vérifier la disponibilité des clés</label>
-                                <div class="btns-flex">
-                                    <button @click="checkRsaKey" class="btn btn-sm btn-primary" type="button">RSA</button>
-                                    <button @click="checkAesKey" class="btn btn-sm btn-success" type="button">AES</button>
-                                </div>
-                            </div>
-
-                            <div class="operation-btn mb-2 bg_2">
-                                <label for="operation" class="form-label">Obtenir la clé publique</label>
-                                <select class="form-select" aria-label="Default select example" v-model="selectedPubKeyReq">
-                                    <option selected disabled>Choisir</option>
-                                    <option value="vendeur">Vendeur</option>
-                                    <option value="ca">Ca</option>
-                                </select>
-                                <button class="btn btn-sm btn-success mt-2" type="button" :disabled="selectedPubKeyReq === null" @click="getPubKey">Obtenir</button>
-                            </div>
                         </div>
                     </div>
 
                     <div class="client-print print">
                         <h6 class="c_1">Sortie</h6> 
-                        <button @click="cleanPrintClient" class="material-icons c_2">cleaning_services</button>
+                        <a @click="cleanPrintClient" class="material-icons c_2">cleaning_services</a>
                         <div class="print-final">
                             {{ printClient }}
                         </div>
@@ -115,11 +115,49 @@
 
                     <div class="vendeur-operations operations">
                         <h6 class="c_1">Opérations disponibles</h6>
+
+                        <div class="operations-btns">
+                            <div class="operation-btn mb-2 bg_2">
+                                <label for="operation" class="form-label">Obtenir la clé publique</label>
+                                <select class="form-select" aria-label="Default select example" v-model="selectedPubKeyReq">
+                                    <option selected disabled>Choisir</option>
+                                    <option value="client">Client</option>
+                                    <option value="ca">Ca</option>
+                                </select>
+                                <button class="btn btn-sm btn-success mt-2" type="button" :disabled="selectedPubKeyReq === null" @click="getPubKey">Obtenir</button>
+                            </div>
+
+                            <div class="operation-btn mb-2 bg_2">
+                                <label for="operation" class="form-label">Vérifier la disponibilité des clés</label>
+                                <div class="btns-flex">
+                                    <button @click="checkRsaKey" class="btn btn-sm btn-primary" type="button">RSA</button>
+                                    <button @click="checkAesKey" class="btn btn-sm btn-success" type="button">AES</button>
+                                </div>
+                            </div>
+                            
+                            <div class="operation-btn mb-2 bg_1">
+                                <label for="operation" class="form-label">Générer une paire de clés RSA 2048</label>
+                                <button @click="generateRsaKey" class="btn btn-sm btn-primary">Générer</button>
+                            </div>
+
+                            <div class="div-flex">
+                                <div class="operation-btn mb-2 bg_2">
+                                    <label for="operation" class="form-label">Générer une clé AES</label>
+                                    <button @click="generateAesKey" class="btn btn-sm btn-primary">Générer</button>
+                                </div>
+    
+                                <div class="operation-btn mb-2 bg_1">
+                                    <label for="operation" class="form-label">Échanges de secrets</label>
+                                    <button @click="secretExchangeCa" class="btn btn-sm btn-primary">CA</button>
+                                </div>
+                            </div>
+                        </div>
+
                     </div>
 
                     <div class="vendeur-print print">
                         <h6 class="c_1">Sortie</h6>
-                        <button @click="cleanPrintVendeur" class="material-icons c_2">cleaning_services</button>
+                        <a @click="cleanPrintVendeur" class="material-icons c_2">cleaning_services</a>
                         <div class="print-final">
                             {{ printVendeur }}
                         </div>
@@ -159,7 +197,7 @@
 
                 <div class="ca-print print">
                     <h6 class="c_1">Sortie</h6>
-                    <button @click="cleanPrintCa" class="material-icons c_2">cleaning_services</button>
+                    <a @click="cleanPrintCa" class="material-icons c_2">cleaning_services</a>
                     <div class="print-final">
                         {{ printCa }}
                     </div>
@@ -205,8 +243,11 @@
             setup() {
                 // Variables
                 let error = ref('');
-
                 let vendeurAvailable = ref(false);
+
+                let selectedPubKeyReq = ref(null);
+                
+                // Résultat d'une requête
                 let printVendeur = ref('');
 
                 /*==== FONCTIONS ====*/
@@ -215,41 +256,306 @@
                             printVendeur.value = '';
                         }
                     /*== TOOLS ==*/
+
+                    /*== VERIFY ==*/
+                        /**
+                        *   Vérifie que le vendeur dispose de clé RSA.
+                        */
+                        async function checkRsaKey() {
+                            try {
+                                const result = await a_checkRsaKey();
+                                printVendeur.value = result;
+                            } catch (error) {
+                                console.error('Erreur :', error);
+                            }
+                        }
+
+                        /**
+                        *   Vérifie que le vendeur dispose d'une clé AES.
+                        */
+                        async function checkAesKey() {
+                            try {
+                                const result = await a_checkAesKey();
+                                printVendeur.value = result;
+                            } catch (error) {
+                                console.error('VENDEUR : Erreur :', error);
+                            }
+                        }
+                    /*== END/VERIFY ==*/
+
+                    /*== GET ==*/
+                        /*
+                        *   Récupère la clé publique de la CA ou du Client.
+                        */
+                        async function getPubKey() {
+                            if (selectedPubKeyReq.value === "ca") {
+                                try {
+                                    const result = await a_getPubKeyCA();
+                                    if(result != -1){
+                                        printVendeur.value = result;
+                                    } else {
+                                        printVendeur.value = "ERREUR SERVEUR.";
+                                    }
+                                } catch (error) {
+                                    printVendeur.value = "ERREUR SERVEUR.";
+                                }
+                            } 
+                            else if (selectedPubKeyReq.value === "client") {
+                                try {
+                                    const result = await a_getPubKeyClient();
+                                    if(result != -1){
+                                        printVendeur.value = result;
+                                    } else {
+                                        printVendeur.value = "ERREUR SERVEUR.";
+                                    }
+                                } catch (error) {
+                                    printVendeur.value = "ERREUR SERVEUR.";
+                                }
+                            }
+
+                            selectedPubKeyReq.value = null;
+                        }
+                    /*== END/GET ==*/
+
+                    /*== CREATE ==*/
+                        /*
+                        *   Génère les clés RSA.
+                        */
+                        async function generateRsaKey() {
+                            try {
+                                const result = await a_generateRsaKey();
+                                printVendeur.value = result;
+                            } catch (error) {
+                                console.error('Erreur :', error);
+                            }
+                        }
+
+                        /*
+                        *   Génère la clé AES.
+                        */
+                        async function generateAesKey() {
+                            try {
+                                const result = await a_generateAesKey();
+                                printVendeur.value = result;
+                            } catch (error) {
+                                console.error('Erreur :', error);
+                            }
+                        }
+
+                        /**
+                        *   Permet de faire l'échange du secret
+                        *   entre le client et la CA.
+                        */
+                        async function secretExchangeCa() {
+                            try {
+                                const result = await a_secretExchangeCa();
+                                printVendeur.value = result;
+                            } catch (error) {
+                                printVendeur.value = error;
+                            }
+                        }
+                    /*== END/CREATE ==*/
+
                 /*==== END/FONCTIONS ====*/
 
+                /*==== ************** ====*/
                 /*==== REQUETES AXIOS ====*/
-                
-                    /*
-                    *   Vérifie que le serveur du vendeur est allumé.
-                    */
-                    async function checkVendeur() {
-                        try {
-                            const response = await axios.get('http://127.0.0.1:5002/vendeur/api/hello');
-                            const statusCode = response.status;
+                /*==== ************** ====*/
+                    /*== VERIFY ==*/
+                        /*
+                        *   Vérifie que le serveur du vendeur est allumé.
+                        */
+                        async function a_checkVendeur() {
+                            try {
+                                const response = await axios.get('http://127.0.0.1:5002/seller/api/hello');
+                                const statusCode = response.status;
 
-                            if(statusCode == 200) {
-                                vendeurAvailable.value = true;
-                            } else {
-                                vendeurAvailable.value = false;
+                                if(statusCode == 200) {
+                                    vendeurAvailable.value = true;
+                                } else {
+                                    vendeurAvailable.value = false;
+                                }
+                            } catch (err) {
+                                console.log('VENDEUR : Erreur lors de la requête API :', err.message);
                             }
-                        } catch (err) {
-                            console.log('VENDEUR : Erreur lors de la requête API :', err.message);
-                        } finally {
-                            
                         }
-                    }
+
+                        /*
+                        *   Vérifie la présence d'une paire de clé RSA sur le vendeur.
+                        */
+                        async function a_checkRsaKey() {
+                            try {
+                                const response = await axios.get('http://127.0.0.1:5002/seller/api/check-rsa-key');
+                                const statusCode = response.status;
+
+                                if(statusCode == 200) {
+                                    return response.data.message;
+                                } else {
+                                    return response.data.error;
+                                }
+                            } catch (err) {
+                                console.log('VENDEUR : Erreur lors de la requête API :', err.message);
+                            }
+                        }
+
+                        /*
+                        *   Vérifie la présence d'une paire de clé RSA sur le client.
+                        */
+                        async function a_checkAesKey() {
+                            try {
+                                const response = await axios.get('http://127.0.0.1:5002/seller/api/check-aes-key');
+                                const statusCode = response.status;
+
+                                if(statusCode == 200) {
+                                    return response.data.message;
+                                } else {
+                                    return response.data.error;
+                                }
+                            } catch (err) {
+                                console.log('VENDEUR : Erreur lors de la requête API :', err.message);
+                            } finally { }
+                        }
+                    /*== END/VERIFY ==*/
+
+                    /*== GET ==*/
+                        /*
+                        *   Récupère la clé publique de la CA sur le client.
+                        *   Et l'affiche sur la vue avec une deuxième requête.
+                        */
+                        async function a_getPubKeyCA() {
+                            try {
+                                // J'effectue d'abord la requête qui utilise la file mqtt.
+                                const response = await axios.get('http://127.0.0.1:5002/seller/api/get-pub-key-ca');
+                                const statusCode = response.status;
+                                
+                                // Si aucune erreur j'effectue une deuxième requête pour afficher la clé.
+                                // Car je ne peux pas attendre la file coté serveur.
+                                if (statusCode === 200) {
+                                    const responsePrintKey = await axios.get('http://127.0.0.1:5002/seller/api/print-pub-key-ca');
+                                    const statusCodePrintKey = responsePrintKey.status;
+                        
+                                    if (statusCodePrintKey === 200) {
+                                        return responsePrintKey.data.message;
+                                    } else {
+                                        return responsePrintKey.data.message;
+                                    }
+                                } else {
+                                    return responsePrintKey.data.error;
+                                }
+                            } catch (err) {
+                                console.log('VENDEUR : Erreur lors de la requête API :', err.message);
+                                return -1; // ou une autre valeur pour indiquer une erreur
+                            }
+                        }
+
+                        /*
+                        *   Récupère la clé publique du vendeur sur le client.
+                        *   Et l'affiche sur la vue avec une deuxième requête.
+                        */
+                        async function a_getPubKeyClient() {
+                            try {
+                                const response = await axios.get('http://127.0.0.1:5002/seller/api/get-pub-key-client');
+                                const statusCode = response.status;
+                        
+                                if (statusCode === 200) {
+                                    const responsePrintKey = await axios.get('http://127.0.0.1:5002/seller/api/print-pub-key-client');
+                                    const statusCodePrintKey = responsePrintKey.status;
+                        
+                                    if (statusCodePrintKey === 200) {
+                                        return responsePrintKey.data.message.data;
+                                    } else {
+                                        throw new Error(responsePrintKey.data.error);
+                                    }
+                                } else {
+                                    throw new Error(response.data.error);
+                                }
+                            } catch (err) {
+                                console.log('VENDEUR : Erreur lors de la requête API :', err.message);
+                                return -1; // ou une autre valeur pour indiquer une erreur
+                            }
+                        }
+                        
+                    /*== END/GET ==*/
+
+                    /*== CREATE ==*/
+                        /*
+                        *   Génère une paire de clé RSA.
+                        */
+                        async function a_generateRsaKey() {
+                            try {
+                                const response = await axios.get('http://127.0.0.1:5002/seller/api/generate-rsa-key');
+                                const statusCode = response.status;
+
+                                if(statusCode == 200) {
+                                    return response.data.message;
+                                } else {
+                                    return response.data.error;
+                                }
+                            } catch (err) {
+                                console.log('CLIENT : Erreur lors de la requête API :', err.message);
+                            } finally { }
+                        }
+
+                        /*
+                        *   Génère une clé AES.
+                        */
+                        async function a_generateAesKey() {
+                            try {
+                                const response = await axios.get('http://127.0.0.1:5002/seller/api/generate-aes-key');
+                                const statusCode = response.status;
+
+                                if(statusCode == 200) {
+                                    return response.data.message;
+                                } else {
+                                    return response.data.error;
+                                }
+                            } catch (err) {
+                                console.log('CLIENT : Erreur lors de la requête API :', err.message);
+                            } finally { }
+                        }
+                    
+                        /*
+                        *   Echange un secret entre le client et la CA.
+                        */
+                        async function a_secretExchangeCa() {
+                            try {
+                                const response = await axios.get('http://127.0.0.1:5002/seller/api/secret-exchange-ca');
+                                const statusCode = response.status;
+                        
+                                if (statusCode == 200) {
+                                    return response.data.message;
+                                } else {
+                                    return response.data.error;
+                                }
+                            } catch (err) {
+                                console.log('CLIENT : Erreur lors de la requête API :', err.message);
+                            }
+                        }                        
+                    /*== END/CREATE ==*/
+
                 /*==== END/REQUETES AXIOS ====*/
 
                 onMounted(async () => {
-                    checkVendeur();
+                    a_checkVendeur();
                 });
 
                 return {
                     vendeurAvailable,
                     printVendeur,
+                    selectedPubKeyReq,
 
                     // Fonctions
                     cleanPrintVendeur,
+
+                    // GET
+                    getPubKey,
+                    checkRsaKey,
+                    checkAesKey,
+
+                    // CREATE
+                    generateRsaKey,
+                    generateAesKey,
+                    secretExchangeCa,
                 }
             }
         }).mount('#vendeur');
@@ -329,7 +635,8 @@
                                     printClient.value = "ERREUR SERVEUR.";
                                 }
                             }
-                            
+
+                            selectedPubKeyReq.value = null;
                         }
                     /*== END/GET ==*/
 

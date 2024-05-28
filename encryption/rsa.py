@@ -10,7 +10,7 @@ from cryptography.hazmat.primitives.serialization import load_pem_private_key
 import base64
 
 # Ajoute le chemin du répertoire parent au chemin de recherche des modules
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), 'encryption')))
 
 class ChiffrementRSA:
     """
@@ -195,8 +195,12 @@ class ChiffrementRSA:
         Returns:
             aes_cipher: la chaîne crypter en RSA.
         """
-        rsa_cipher = base64.b64decode(encoded_cipher_base64)
-        return rsa_cipher
+        try:
+            rsa_cipher = base64.b64decode(encoded_cipher_base64)
+            return rsa_cipher
+        except (Exception) as e:
+            print(f"Erreur lors du décodage base64: {e}")
+            return None
 
     def decrypter(self, message_chiffre, cle_privee=None):
         """
@@ -208,7 +212,7 @@ class ChiffrementRSA:
 
             Returns:
                 bytes: Le message déchiffré
-                str: Message d'erreur si la clé privée ou le déchiffrement échoue.
+                None: +Message d'erreur si la clé privée ou le déchiffrement échoue.
         """
         try:
             if cle_privee is None:
@@ -225,26 +229,17 @@ class ChiffrementRSA:
             
             return plaintext
         except ValueError as ve:
-            # Gestion des erreurs de déchiffrement
-            return f"Erreur de déchiffrement : {ve}"
+            print(f"Erreur de déchiffrement : {ve}")
+            return None
         except Exception as e:
-            # Gestion des autres erreurs
-            return f"Erreur lors du déchiffrement : {e}"
-
+            print(f"Erreur lors du déchiffrement : {e}")
+            return None
 
 """
 Exemple d'utilisation :       
 """
 
 # chiffrement = ChiffrementRSA()
-
-# # Exporte la clé publique en PEM
-# cle_publique_pem = chiffrement.exporter_cle_publique_pem()
-# print(f"Clé publique PEM:\n{cle_publique_pem}")
-
-# # Exporte la clé privée en PEM
-# cle_privee_pem = chiffrement.exporter_cle_privee_pem()
-# print(f"Clé privée PEM:\n{cle_privee_pem}")
 
 # # Chiffrer un message
 # message = b"Ceci est un message secret"

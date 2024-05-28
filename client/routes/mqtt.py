@@ -44,6 +44,7 @@ def on_mqtt_message(client, userdata, message):
     print(f"Message reçu sur le sujet {message.topic}")
     message_data = json.loads(payload)
     
+    # MESSAGE DE LA PART DE LA CA
     if message.topic == str(os.getenv("TOPIC_SUB_CA")):
         if 'code' in message_data:
             from app import rsa_instance
@@ -66,17 +67,28 @@ def on_mqtt_message(client, userdata, message):
             # Code non trouvé dans le message
             print("Code non trouvé dans le message")
     
+    # MESSAGE DE LA PART DU VENDEUR
     elif message.topic == str(os.getenv("TOPIC_SUB_SELLER")):
         if 'code' in message_data:
             from app import rsa_instance
             
             code = message_data['code']
             if code == 1: # Réception de la clé publique du vendeur
-                if rsa_instance.insert_rsa_key(rsa_instance.receive_pub_key(message_data['data']), "ca") != 0:
+                if rsa_instance.insert_rsa_key(rsa_instance.receive_pub_key(message_data['data']), "seller") != 0:
                     print("CLIENT: Error getting pubKey from SELLER")
-                    
-            elif code == 2: 
-                print("Action pour le code 2")
+                print("CLIENT: CLE DU VENDEUR RECU")
+                
+            elif code == 2: # Envoi de la clé publique du client au vendeur
+                print(f"RECETION DEMANDE DE CLE DE LA PART DU VENDEUR")
+                pubKey = rsa_instance.get_my_pub_key_serialized()
+                
+                message = {
+                    'code': 2,
+                    'data': pubKey 
+                }
+                
+                publish_message(os.getenv("TOPIC_PUBLISH_SELLER"), json.dumps(message))
+                print("TOPIC CLIENT : CLE PUBLIQUE ENVOYE AU VENDEUR.")
             else:
                 # Code inconnu
                 print("Code inconnu")
@@ -87,9 +99,24 @@ def on_mqtt_message(client, userdata, message):
 def publish_message(topic, payload):
     """
         Publie un message sur un sujet MQTT donné.
+        
+        Args:
+            topic (str): Le sujet sur lequel publier le message.
+            payload (str): Le message à publier.
+        
+        Returns:
+            str: Un message d'erreur en cas d'échec, None en cas de succès.
     """
-    mqtt.publish(topic, payload)
+    if not topic or not payload:
+        return -1
 
+    try:
+        mqtt.publish(topic, payload)
+        return None
+    except Exception  as e:
+        print(f"Error: ", e)
+        return -1
+   
 # Routes MQTT sur le blueprint mqtt_bp
 @mqtt_bp.route('/mqtt/test', methods=['GET'])
 def mqtt_test():

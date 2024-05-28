@@ -6,7 +6,7 @@ import logging, os, sys
 from pathlib import Path
 
 # Ajoute les répertoires contenant les modules Python au chemin de recherche des modules
-project_root = Path(__file__).resolve().parent
+project_root = Path(__file__).resolve().parent.parent
 sys.path.append(str(project_root))
 
 # Importation des modules personnel
@@ -17,8 +17,8 @@ from routes.api import api_bp
 from routes.mqtt import mqtt_bp
 
 # Classes RSA AES & Certificat
-from src.classes.encryption.rsa import ChiffrementRSA
-from src.classes.encryption.aes import ChiffrementAES
+from encryption.rsa import ChiffrementRSA
+from encryption.aes import ChiffrementAES
 from src.classes.crl.certificat import Certificat
 
 # Configuration des logs pour l'utilisation du Launcher.py
