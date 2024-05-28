@@ -51,10 +51,10 @@ def on_mqtt_message(client, userdata, message):
             
             code = message_data['code']
             if code == 1: # Réception de la clé publique de la CA
-                pubKeyCa = rsa_instance.receive_pub_key(message_data['data'])
+                pubKeyCa = rsa_instance.receive_pub_key_pem(message_data['data'])
                 # Vérification si l'objet pubKeyCa est créé avec succès
                 if pubKeyCa:
-                    rsa_instance.insert_rsa_key(pubKeyCa, "ca")
+                    rsa_instance.insert_pub_key(pubKeyCa, "ca")
                 else:
                     print("Erreur lors de la désérialisation de la clé publique")
             
@@ -76,7 +76,7 @@ def on_mqtt_message(client, userdata, message):
             code = message_data['code']
             if code == 1: # Demande d'envoi de la clé publique du vendeur au client
                 print(f"RECETION DEMANDE CLE DE LA PART DU CLIENT")
-                pubKey = rsa_instance.get_my_pub_key_serialized()
+                pubKey = rsa_instance.get_my_pub_key_pem()
                 
                 message = {
                     'code': 1,
@@ -87,10 +87,12 @@ def on_mqtt_message(client, userdata, message):
                 print("TOPIC CLIENT : CLE PUBLIQUE ENVOYE.")
                 
             elif code == 2: # Reception de la clé publique du client
-                if rsa_instance.insert_rsa_key(rsa_instance.receive_pub_key(message_data['data']), "client") != 0:
-                    print("SELLER: Error getting pubKey from client.")
-                print("SELLER: CLE DU VENDEUR RECU")
-                
+                clientPubKeyBytes = rsa_instance.receive_pub_key_pem(message_data['data'])
+                if clientPubKeyBytes is not None:
+                    rsa_instance.insert_pub_key(clientPubKeyBytes, "client")
+                    print("SELLER: CLE DU VENDEUR RECU")
+                else:
+                    print("ERROR SELLER: JE RECOIS UNE CLE NONE CODE 2 TOPIC SUB CLIENT.")
             else:
                 # Code inconnu
                 print("Code inconnu")

@@ -39,10 +39,8 @@ def generateRSAKey():
     
     check_rsa = rsa_instance.get_my_pub_key()
     if not check_rsa:
-        if rsa_instance.generer_cles() == -1:
-            return jsonify({'error': "Erreur serveur."}), 500
-        else:
-            return jsonify({'message': "Clés générés avec succès."}), 200
+        rsa_instance.generate_keys()
+        return jsonify({'message': "Clés générés avec succès."}), 200
     else:
         return jsonify({'message': "Des clés RSA existent déjà sur le vendeur."}), 200
     
@@ -137,7 +135,7 @@ async def printPubKeyCa():
     from app import rsa_instance
 
     await asyncio.sleep(1)  # Attend une seconde pour être sur que la clé est bien stocké dans la classe.
-    caPubKey = rsa_instance.get_rsa_key("ca", True)
+    caPubKey = rsa_instance.get_pub_key("ca", True)
     
     if not caPubKey:
         return jsonify({'message': "VENDEUR : Vous n'avez pas la clé publique de la CA."}), 200
@@ -176,7 +174,7 @@ async def printPubKeyClient():
     
     await asyncio.sleep(1)
     
-    caPubKey = rsa_instance.get_rsa_key("client", True)
+    caPubKey = rsa_instance.get_pub_key("client", True)
     if caPubKey == -1:
         return jsonify({'message': "SELLER: ERROR SERVER."}), 500
 
@@ -205,34 +203,74 @@ async def secretExchangeCa():
     if request.method != 'GET':
         return jsonify({"error": "Method Not Allowed"}), 405
     from app import rsa_instance, aes_instance
-
-    # Je récupère la clé publique de la CA depuis l'instance RSA du vendeur.
-    caPubKey = rsa_instance.get_rsa_key("ca")
-    if caPubKey == None:
-        return jsonify({'message': "ERROR SERVER: La clé publique de la CA est introuvable."}), 200
+ 
+    # Je récupère la clé publique de la CA depuis l'instance du vendeur.
+    caPubKey = rsa_instance.get_pub_key("ca")
+    if caPubKey is None:
+        return jsonify({'message': "ERROR: La clé publique de la CA est introuvable."}), 200
     
-    # Je récupère la clé AES du vendeur depuis l'instance AES du vendeur.
+    # Je récupère la clé AES du vendeur.
     sellerAesKey = aes_instance.get_my_aes_key()
+    print("\n\nMY AES KEY ORININAL:\n", sellerAesKey)
     if sellerAesKey == None:
-        return jsonify({'message': "ERROR SERVER: La clé AES du vendeur est introuvable."}), 200
+        return jsonify({'message': "ERROR: La clé AES du vendeur est introuvable."}), 200
+        
+    # Je crypte la clé AES du vendeur par la clé publique de la CA et convertir en base64.
+    aes_cipher_base64 = rsa_instance.crypter(sellerAesKey, caPubKey, True)
+    if aes_cipher_base64 == None:
+        print("ERROR: La clé AES du vendeur n'a pas pu être crypté ou converti en base64 route('secretExchangeCa').")
+        return jsonify({'message': "ERROR: La clé AES du vendeur n'a pas pu être crypté ou converti en base64 route('secretExchangeCa')."}), 200
     
-    # Je crypte la clé AES du vendeur par la clé publique de la CA en base64.
-    aes_cipher = rsa_instance.crypter(sellerAesKey, caPubKey, True)
-    if aes_cipher == None:
-        return jsonify({'message': "ERROR SERVER: La clé AES du vendeur n'a pas pu être chiffré."}), 200
-    
-    print(f"SECRET EN BASE 64 :\n", aes_cipher)
-    
-    # Je construit le message à publié sur la file MQTT.
+    # Je construit le message à publier sur la file MQTT.
     message = {
         'code' : 2,
-        'data' : aes_cipher
+        'data' : aes_cipher_base64
     }
-        
+    
+    print("\n\nAES SENDED: ", aes_cipher_base64)
+    
     # Je publie le message.
     error = publish_message(os.getenv("TOPIC_PUBLISH_CA"), json.dumps(message))
     if error:
         return jsonify({'message': "ERROR SERVEUR: publication sur la file MQTT impossible."}), 200
-     
-    print(f"\n\n CLE AES CLIENT: ", sellerAesKey)
+    
     return jsonify({'message': "Le secrêt vient d'être publié sur la file MQTT."}), 200
+
+@api_bp.route('/seller/api/request-certificat', methods=['POST'])
+def requestCertificat():
+    if request.method != 'POST':
+        return jsonify({"error": "Method Not Allowed"}), 405
+    from app import rsa_instance, aes_instance
+    
+    # Informations à inclure dans le certificat
+    dataReceived = json.dumps(request.get_json())
+    # Cryptage des données à inclure dans le certificat
+    encryptedDataUser = aes_instance.encrypt(dataReceived.encode('utf-8'), True)
+    if encryptedDataUser == None:
+        return jsonify({'message': "ERROR SERVEUR: Erreur lors de la tentative de cryptage de la clé publique (requestCertificat)."}), 200
+
+    # Récuperation de la clé publique du vendeur
+    pubKey = rsa_instance.get_my_pub_key_pem()
+    if pubKey == None:
+        return jsonify({'message': 'Clé publique non trouvée.'}), 200
+    
+    # Cryptage de la clé publique avec la clé AES
+    # Je dois convertir cette clé en bytes encode('utf-8')
+    encryptedPubKey = aes_instance.encrypt(pubKey.encode('utf-8'), True)
+    if encryptedPubKey == None:
+        return jsonify({'message': "ERROR SERVEUR: Erreur lors de la tentative de cryptage de la clé publique (requestCertificat)."}), 200
+    
+    # Préparation des données à envoyer
+    dataToSend = {
+        'code': 3,
+        'dataUser': encryptedDataUser,
+        'pubKey': encryptedPubKey
+    }
+        
+    # Je publie le message.
+    error = publish_message(os.getenv("TOPIC_PUBLISH_CA"), json.dumps(dataToSend))
+    if error:
+        return jsonify({'message': "ERROR SERVEUR: publication sur la file MQTT impossible (requestCertificat)."}), 200
+    print("DEMANDE ENVOYE")
+    
+    return jsonify({'message': 'Demande de certificat envoyée.'}), 200

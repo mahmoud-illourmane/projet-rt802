@@ -38,7 +38,7 @@ def on_mqtt_message(client, userdata, message):
     """
         Logique à exécuter lorsqu'un message est reçu.
     """
-    from src.tools.tools import receive_exchange_secret_client 
+    from src.tools.tools import receive_exchange_secret 
     from app import rsa_instance, aes_instance 
     
     payload = message.payload.decode()
@@ -58,7 +58,7 @@ def on_mqtt_message(client, userdata, message):
             
             if code == 1: # Envoi de la clé publique au client
                 from app import rsa_instance
-                pubKey = rsa_instance.get_my_pub_key_serialized()
+                pubKey = rsa_instance.get_my_pub_key_pem()
                 
                 message = {
                     'code': 1,
@@ -70,11 +70,11 @@ def on_mqtt_message(client, userdata, message):
             
             elif code == 2: # Échange du secret avec le client
                 print(f"TOPIC CLIENT : Je recois une demande d'échange de secret.")
-                error = receive_exchange_secret_client(rsa_instance, aes_instance, message_data['data'])
+                error = receive_exchange_secret(rsa_instance, aes_instance, message_data['data'], "client")
                 if error == None:
-                    print("ERROR SERVER: Erreur lors du décryptage.")
-                    
-                print("\nTOPIC CLIENT : SECRET RECU.")
+                    print("ERROR SERVER: Erreur lors du décryptage du secret du client.")
+                else:
+                    print("\nTOPIC CLIENT : SECRET RECU.")
             else:
                 # Code inconnu
                 print("Code inconnu")
@@ -85,10 +85,10 @@ def on_mqtt_message(client, userdata, message):
     # GESTION DES MESSAGES SUR LA TOPIC DU VENDEUR   
     elif message.topic == str(os.getenv("TOPIC_SUB_SELLER")):
         code = message_data['code']
-        
+
         if code == 1: # Envoi de la clé publique au vendeur
             from app import rsa_instance
-            pubKey = rsa_instance.get_my_pub_key_serialized()
+            pubKey = rsa_instance.get_my_pub_key_pem()
             if pubKey == None:
                 print("ERROR PUBKEY")
 
@@ -101,12 +101,33 @@ def on_mqtt_message(client, userdata, message):
             print("TOPIC SELLER : MESSAGE CODE 1 PUBLIE.")
             
         elif code == 2: # Échange du secret avec le vendeur
-            print(f"TOPIC CLIENT : Je recois une demande d'échange de secret.")
-            error = receive_exchange_secret_client(rsa_instance, aes_instance, message_data['data'])
-            if error == None:
-                print("ERROR SERVER: Erreur lors du décryptage.")
-                
-            print("\nTOPIC CLIENT : SECRET RECU.")
+            print(f"TOPIC VENDEUR : Je recois une demande d'échange de secret.")
+            print(f"\n\nAES ENCRYPTED:\n\n", message_data['data'])
+            
+            rsa_cipher = rsa_instance.decode_base64_encoded_rsa_cipher(message_data['data'])
+            if rsa_cipher == None:
+                print("Error rsa_instance.decrypt_cipher_base64(dataBase64)")
+                return None
+            print("\n\nRSA CIHPER WITHOUT BASE64: \n", rsa_cipher)
+            
+            decrypted_aes_key = rsa_instance.decrypter(rsa_cipher)
+            if decrypted_aes_key == None:
+                print("Error rsa_instance.decrypter(rsa_cipher)")
+                return None
+            print("\n\nAES DECRYPTED: \n", decrypted_aes_key)
+            
+            # error = receive_exchange_secret(rsa_instance, aes_instance, message_data['data'], "seller")
+            # if error == None:
+            #     print("ERROR SERVER: Erreur lors du décryptage du secret du vendeur.")
+            # else:   
+            #     print("\nTOPIC VENDEUR : SECRET RECU.")
+        
+        elif code == 3: # Demande de certificat
+            print(f"TOPIC CLIENT : Je recois une demande de certificat.")
+            dataUser = aes_instance.decrypt(message_data['dataUser'], aes_instance.get_aes_key("seller"), True)
+            if dataUser == None:
+                print("ERREUR DECRYPTAGE DES DONNEES")
+            print(dataUser)
         else:
             # Code inconnu
             print("Code inconnu")

@@ -17,7 +17,7 @@ class Certificat:
         from app import rsa_instance
         
         self.rsa_instance = rsa_instance
-        self.cle_privee = self.rsa_instance.exporter_cle_privee()
+        self.cle_privee = self.rsa_instance.get_private_key()
         self.cle_publique = self.cle_privee.public_key()
         
         self.crl = None

@@ -1,6 +1,6 @@
 <mxfile host="65bd71144e">
     <diagram name="Page-1" id="i0Og0DgrA8-Swl__wC8m">
-        <mxGraphModel dx="453" dy="337" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
+        <mxGraphModel dx="560" dy="392" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
             <root>
                 <mxCell id="0"/>
                 <mxCell id="1" parent="0"/>
@@ -182,7 +182,7 @@
                         </Array>
                     </mxGeometry>
                 </mxCell>
-                <mxCell id="gQTu4yViG4mN7dmzVnCT-65" value="&lt;font style=&quot;text-align: left; font-size: 9px;&quot;&gt;1-Hashing of:&lt;/font&gt;&lt;div style=&quot;text-align: left; font-size: 9px;&quot;&gt;- certif infos.&lt;/div&gt;&lt;div style=&quot;text-align: left; font-size: 9px;&quot;&gt;- pub k user&lt;/div&gt;&lt;div style=&quot;text-align: left; font-size: 9px;&quot;&gt;- num&lt;/div&gt;&lt;div style=&quot;text-align: left; font-size: 9px;&quot;&gt;- date&lt;/div&gt;&lt;div style=&quot;text-align: left; font-size: 9px;&quot;&gt;&amp;nbsp; &amp;nbsp; &amp;nbsp; &amp;nbsp;&lt;/div&gt;&lt;div style=&quot;text-align: left; font-size: 9px;&quot;&gt;2- Encrypt the hash by private key of CA to generat the CSR/&lt;/div&gt;&lt;div style=&quot;text-align: left; font-size: 9px;&quot;&gt;&lt;br&gt;&lt;/div&gt;" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" parent="1" vertex="1">
+                <mxCell id="gQTu4yViG4mN7dmzVnCT-65" value="&lt;font style=&quot;text-align: left; font-size: 9px;&quot;&gt;1-Hashing of:&lt;/font&gt;&lt;div style=&quot;text-align: left; font-size: 9px;&quot;&gt;- certif infos.&lt;/div&gt;&lt;div style=&quot;text-align: left; font-size: 9px;&quot;&gt;- pubkey user&lt;/div&gt;&lt;div style=&quot;text-align: left; font-size: 9px;&quot;&gt;- num&lt;/div&gt;&lt;div style=&quot;text-align: left; font-size: 9px;&quot;&gt;- date&lt;/div&gt;&lt;div style=&quot;text-align: left; font-size: 9px;&quot;&gt;&amp;nbsp; &amp;nbsp; &amp;nbsp; &amp;nbsp;&lt;/div&gt;&lt;div style=&quot;text-align: left; font-size: 9px;&quot;&gt;2- Encrypt the hash by private key of CA to generat the CSR/&lt;/div&gt;&lt;div style=&quot;text-align: left; font-size: 9px;&quot;&gt;&lt;br&gt;&lt;/div&gt;" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" parent="1" vertex="1">
                     <mxGeometry x="1030" y="350" width="100" height="80" as="geometry"/>
                 </mxCell>
                 <mxCell id="gQTu4yViG4mN7dmzVnCT-66" value="" style="endArrow=classic;html=1;rounded=0;exitX=0.016;exitY=0.306;exitDx=0;exitDy=0;exitPerimeter=0;" parent="1" source="gQTu4yViG4mN7dmzVnCT-58" target="gQTu4yViG4mN7dmzVnCT-38" edge="1">

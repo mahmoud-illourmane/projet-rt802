@@ -150,7 +150,59 @@
                                     <label for="operation" class="form-label">Échanges de secrets</label>
                                     <button @click="secretExchangeCa" class="btn btn-sm btn-primary">CA</button>
                                 </div>
+
+                                <div class="operation-btn mb-2 bg_1">
+                                    <label for="operation" class="form-label">Demander un certificat à la CA</label>
+                                    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#sellerGenerateCertificat">Demander</button>
+                                    
+                                    <!-- Modal -->
+                                    <div class="modal fade" id="sellerGenerateCertificat" tabindex="-1" aria-labelledby="sellerGenerateCertificat" aria-hidden="true">
+                                        <div class="modal-dialog">
+                                            <div class="modal-content">
+                                                <div class="modal-header">
+                                                <h1 class="modal-title fs-5">Demander un certificat</h1>
+                                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                                </div>
+                                                <div class="modal-body">
+                                                    <!-- HTML -->
+                                                    <form>
+                                                        <div class="mb-3">
+                                                            <label for="labelInputEmail" class="form-label">Country name</label>
+                                                            <input type="email" class="form-control" v-model="country_name">
+                                                        </div>
+    
+                                                        <div class="mb-3">
+                                                            <label for="labelInputName" class="form-label">State or province name</label>
+                                                            <input type="text" class="form-control" v-model="state_or_province_name">
+                                                        </div>
+    
+                                                        <div class="mb-3">
+                                                            <label for="labelInputPrenom" class="form-label">Locality name</label>
+                                                            <input type="text" class="form-control" v-model="locality_name">
+                                                        </div>
+    
+                                                        <div class="mb-3">
+                                                            <label for="labelInputPrenom" class="form-label">Organization name</label>
+                                                            <input type="text" class="form-control" v-model="organization_name">
+                                                        </div>
+    
+                                                        <div class="mb-3">
+                                                            <label for="labelInputPrenom" class="form-label">Common name</label>
+                                                            <input type="text" class="form-control" v-model="common_name">
+                                                        </div>
+                                                    </form>
+                                                </div>
+                                                <div class="modal-footer">
+                                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                                                    <button type="button" @click="handleGenerateCertificat" :disabled="!btnHandleGenerateCertificat" class="btn btn-primary">Confirmer la demande</button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
+
+                            
                         </div>
 
                     </div>
@@ -250,6 +302,16 @@
                 // Résultat d'une requête
                 let printVendeur = ref('');
 
+                // Génération du certificat
+                let country_name = ref('');
+                let state_or_province_name = ref('');
+                let locality_name = ref('');
+                let organization_name = ref('');
+                let common_name = ref('');
+
+                let btnHandleGenerateCertificat = ref(false);
+
+                
                 /*==== FONCTIONS ====*/
                     /*== TOOLS ==*/
                         function cleanPrintVendeur() {
@@ -354,6 +416,44 @@
                                 printVendeur.value = error;
                             }
                         }
+
+
+                        // Vérifie que tous les champs sont remplis
+                        watchEffect(() => {
+                            btnHandleGenerateCertificat.value = common_name.value.trim() !== '' &&
+                                                                organization_name.value.trim() !== '' &&
+                                                                locality_name.value.trim() !== '' &&
+                                                                state_or_province_name.value.trim() !== '' &&
+                                                                country_name.value.trim() !== '';
+                        });
+
+                        /**
+                        *   Permet de faire l'échange du secret
+                        *   entre le client et la CA.
+                        */
+                        async function handleGenerateCertificat() {
+                            try {
+                                const dataToSend = {
+                                    common_name: common_name.value,
+                                    organization_name: organization_name.value,
+                                    locality_name: locality_name.value,
+                                    state_or_province_name: state_or_province_name.value,
+                                    country_name: country_name.value,
+                                };
+
+                                const result = await a_handleGenerateCertificat(dataToSend);
+                                printVendeur.value = result;
+                            } catch (error) {
+                                printVendeur.value = error;
+                            } finally {
+                                common_name.value = '';
+                                organization_name.value = '';
+                                locality_name.value = '';
+                                state_or_province_name.value = '';
+                                country_name.value = '';
+                            }
+                        }
+                        
                     /*== END/CREATE ==*/
 
                 /*==== END/FONCTIONS ====*/
@@ -492,7 +592,7 @@
                                     return response.data.error;
                                 }
                             } catch (err) {
-                                console.log('CLIENT : Erreur lors de la requête API :', err.message);
+                                console.log('CLIENT : Erreur lors de la requête API (a_generateRsaKey) :', err.message);
                             } finally { }
                         }
 
@@ -510,12 +610,12 @@
                                     return response.data.error;
                                 }
                             } catch (err) {
-                                console.log('CLIENT : Erreur lors de la requête API :', err.message);
+                                console.log('CLIENT : Erreur lors de la requête API (a_generateAesKey) :', err.message);
                             } finally { }
                         }
                     
                         /*
-                        *   Echange un secret entre le client et la CA.
+                        *   Echange un secret entre le vendeur et la CA.
                         */
                         async function a_secretExchangeCa() {
                             try {
@@ -528,9 +628,24 @@
                                     return response.data.error;
                                 }
                             } catch (err) {
-                                console.log('CLIENT : Erreur lors de la requête API :', err.message);
+                                console.log('VENDEUR : Erreur lors de la requête API :', err.message);
                             }
                         }                        
+                    
+                        async function a_handleGenerateCertificat(dataToSend) {
+                            try {
+                                const response = await axios.post('http://127.0.0.1:5002/seller/api/request-certificat', dataToSend);
+                                const statusCode = response.status;
+                        
+                                if (statusCode == 200) {
+                                    return response.data.message;
+                                } else {
+                                    return response.data.error;
+                                }
+                            } catch (err) {
+                                console.log('VENDEUR : Erreur lors de la requête API :', err.message);
+                            }
+                        }
                     /*== END/CREATE ==*/
 
                 /*==== END/REQUETES AXIOS ====*/
@@ -543,6 +658,15 @@
                     vendeurAvailable,
                     printVendeur,
                     selectedPubKeyReq,
+
+                    // Génération du certificat
+                    country_name,
+                    state_or_province_name,
+                    locality_name,
+                    organization_name,
+                    common_name,
+                    btnHandleGenerateCertificat,
+                    handleGenerateCertificat,
 
                     // Fonctions
                     cleanPrintVendeur,
@@ -699,7 +823,7 @@
                                     vendeurAvailable.value = false;
                                 }
                             } catch (err) {
-                                console.log('CLIENT : Erreur lors de la requête API :', err.message);
+                                console.log('CLIENT : Erreur lors de la requête API (a_generateAesKey) :', err.message);
                             }
                         }
 
@@ -717,7 +841,7 @@
                                     return response.data.error;
                                 }
                             } catch (err) {
-                                console.log('CLIENT : Erreur lors de la requête API :', err.message);
+                                console.log('CLIENT : Erreur lors de la requête API (a_generateAesKey) :', err.message);
                             }
                         }
 
@@ -735,7 +859,7 @@
                                     return response.data.error;
                                 }
                             } catch (err) {
-                                console.log('CLIENT : Erreur lors de la requête API :', err.message);
+                                console.log('CLIENT : Erreur lors de la requête API (a_generateAesKey) :', err.message);
                             } finally { }
                         }
                     /*== END/VERIFY ==*/
@@ -761,13 +885,13 @@
                                     if (statusCodePrintKey === 200) {
                                         return responsePrintKey.data.message.data;
                                     } else {
-                                        return responsePrintKey.data.error;
+                                        return responsePrintKey.data.data;
                                     }
                                 } else {
-                                    return responsePrintKey.data.error;
+                                    return responsePrintKey.data.data;
                                 }
                             } catch (err) {
-                                console.log('CLIENT : Erreur lors de la requête API :', err.message);
+                                console.log('CLIENT : Erreur lors de la requête API (a_generateAesKey) :', err.message);
                                 return -1; // ou une autre valeur pour indiquer une erreur
                             }
                         }
@@ -794,7 +918,7 @@
                                     throw new Error(response.data.error);
                                 }
                             } catch (err) {
-                                console.log('CLIENT : Erreur lors de la requête API :', err.message);
+                                console.log('CLIENT : Erreur lors de la requête API(a_generateAesKey) :', err.message);
                                 return -1; // ou une autre valeur pour indiquer une erreur
                             }
                         }
@@ -817,7 +941,7 @@
                                     return response.data.error;
                                 }
                             } catch (err) {
-                                console.log('CLIENT : Erreur lors de la requête API :', err.message);
+                                console.log('CLIENT : Erreur lors de la requête API (a_generateAesKey) :', err.message);
                             } finally { }
                         }
 
@@ -835,7 +959,7 @@
                                     return response.data.error;
                                 }
                             } catch (err) {
-                                console.log('CLIENT : Erreur lors de la requête API :', err.message);
+                                console.log('CLIENT : Erreur lors de la requête API (a_generateAesKey) :', err.message);
                             } finally { }
                         }
 
@@ -853,7 +977,7 @@
                                     return response.data.error;
                                 }
                             } catch (err) {
-                                console.log('CLIENT : Erreur lors de la requête API :', err.message);
+                                console.log('CLIENT : Erreur lors de la requête API (a_generateAesKey) :', err.message);
                             }
                         }                        
 

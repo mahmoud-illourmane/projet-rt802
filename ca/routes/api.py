@@ -60,10 +60,16 @@ def check_ca_crl():
 
 @api_bp.route('/ca/get-public-key', methods=['GET'])
 def get_public_key():
+    """
+        Retourne la clé publique de la CA.
+
+    Returns:
+        public_key_str (PEM): La clé publique au format PEM.
+    """
     if request.method == 'GET':
         from app import rsa_instance
         
-        public_key_str = rsa_instance.exporter_cle_publique_str()
+        public_key_str = rsa_instance.get_my_pub_key_pem()
         return jsonify({"data": public_key_str}), 200
     else:
         return jsonify({"error": "Method Not Allowed"}), 405

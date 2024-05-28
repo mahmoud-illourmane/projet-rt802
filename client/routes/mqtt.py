@@ -51,13 +51,13 @@ def on_mqtt_message(client, userdata, message):
             
             code = message_data['code']
             if code == 1: # Réception de la clé publique de la CA
-                pubKeyCa = rsa_instance.receive_pub_key(message_data['data'])
-                
+                pubKeyCa = rsa_instance.receive_pub_key_pem(message_data['data'])
                 # Vérification si l'objet pubKeyCa est créé avec succès
                 if pubKeyCa:
-                    rsa_instance.insert_rsa_key(pubKeyCa, "ca")
+                    rsa_instance.insert_pub_key(pubKeyCa, "ca")
                 else:
-                    print("Erreur lors de la désérialisation de la clé publique")
+                    print("Erreur lors de la désérialisation de la clé publique.")
+                    
             elif code == 2: # Réception autre  
                 print("TODO")
             else:
@@ -74,13 +74,14 @@ def on_mqtt_message(client, userdata, message):
             
             code = message_data['code']
             if code == 1: # Réception de la clé publique du vendeur
-                if rsa_instance.insert_rsa_key(rsa_instance.receive_pub_key(message_data['data']), "seller") != 0:
-                    print("CLIENT: Error getting pubKey from SELLER")
-                print("CLIENT: CLE DU VENDEUR RECU")
+                sellerPubKey = rsa_instance.receive_pub_key_pem(message_data['data'])
+                if sellerPubKey is not None:
+                    rsa_instance.insert_pub_key(sellerPubKey, "seller")
+                    print("CLIENT: CLE DU VENDEUR RECU")
                 
             elif code == 2: # Envoi de la clé publique du client au vendeur
                 print(f"RECETION DEMANDE DE CLE DE LA PART DU VENDEUR")
-                pubKey = rsa_instance.get_my_pub_key_serialized()
+                pubKey = rsa_instance.get_my_pub_key_pem()
                 
                 message = {
                     'code': 2,

@@ -4,35 +4,38 @@ from datetime import datetime, timedelta
 # Ajoute le chemin du répertoire parent au chemin de recherche des modules
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-def receive_exchange_secret_client(rsa_instance, aes_instance, dataBase64):
+def receive_exchange_secret(rsa_instance, aes_instance, dataBase64, sender):
     """
         Cette fonction sert à récuperer le secrêt envoyer par 
-        le client.
+        le client ou le vendeur.
         Elle décrypte la clé AES, et l'ajoute au dictionnaire de la CA.
         
     Args:
         rsa_instance (ChiffrementRSA): L'instance de la CA.
         aes_instance (ChiffrementAES): L'instance de la CA.
         dataBase64 (Base64): La chaîne reçu encodée en base64 et crypté en RSA.
+        sender (str): De qui la CA reçoit le secret.
     """
     from app import rsa_instance, aes_instance
     
     # J'enlève le base64
-    rsa_cipher = rsa_instance.decrypt_cipher_base64(dataBase64)
+    rsa_cipher = rsa_instance.decode_base64_encoded_rsa_cipher(dataBase64)
     if rsa_cipher == None:
+        print("Error rsa_instance.decrypt_cipher_base64(dataBase64)")
         return None
-    print("\n\nSECRET SANS BASE64 :\n", rsa_cipher)
+    
+    print("step1")
     
     decrypted_aes_key = rsa_instance.decrypter(rsa_cipher)
     if decrypted_aes_key == None:
+        print("Error rsa_instance.decrypter(rsa_cipher)")
         return None
+    print("step2")
     
-    print(f"CLE AES DECRYPTEE : ", decrypted_aes_key)
-    aes_instance.insert_aes(decrypted_aes_key, "client")
-    
+    aes_instance.insert_aes_key(decrypted_aes_key, sender)
 
 
-def write_log(entry, filename="server_log.txt"):
+def write_log(entry, filename="ca_log.txt"):
     """
         Écrit une entrée dans un fichier log avec la date et l'heure actuelles.
         
