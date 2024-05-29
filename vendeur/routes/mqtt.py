@@ -58,8 +58,9 @@ def on_mqtt_message(client, userdata, message):
                 else:
                     print("Erreur lors de la désérialisation de la clé publique")
             
-            elif code == 2: # Réception autre  
-                print("TODO")
+            elif code == 2: # Réception d'un certificat de la part de la CA.  
+                certificat_encoded = message_data['data']
+                print("certificat_encoded: \n", certificat_encoded)
                 
             else:
                 # Code inconnu

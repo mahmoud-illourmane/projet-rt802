@@ -46,9 +46,9 @@ def decrypt_data_request_certificat(aes_instance, aesKey, dataUserEncrypted, pub
 
         Args:
             aes_instance (ChiffrementAES): L'instance AES de la CA.
-            aesKey (bytes): La clé AES du vendeur.
+            aesKey (bytes): La clé AES du vendeur qui servira à décrypter les données.
             dataUserEncrypted (Any): Les données cryptées.
-            pubKeyEncrypted (Any): Les données cryptées.
+            pubKeyEncrypted (Any): La clé publique du vendeur cryptée.
             used_base64 (bool, optionnel): Indique si les données ont été encodées en base64. Par défaut, True.
 
         Returns:

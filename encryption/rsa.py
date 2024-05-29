@@ -262,6 +262,27 @@ class ChiffrementRSA:
 Exemple d'utilisation :       
 """
 
+# Example 1 pubKey extraction
+
+# rsa_1 = ChiffrementRSA()
+# pub_key = rsa_1.get_my_pub_key()
+# pub_key_pem = rsa_1.get_my_pub_key_pem()
+# if pub_key_pem is  None:
+#     exit(-1)
+    
+# print("pub_key: ", pub_key)
+# print("pub_key_pem: ", pub_key_pem)
+
+# return_to_pub_key = rsa_1.receive_pub_key_pem(pub_key_pem)
+# print("return_to_pub_key: ", return_to_pub_key)
+
+# if pub_key == return_to_pub_key:
+#     print("La clé reconstruite est identique à la clé d'origine.")
+# else:
+#     print("Attention : La clé reconstruite est différente de la clé d'origine.")
+
+
+# Example 2
 # # Création d'un message à chiffrer
 # message = b"Hello, world!"
 

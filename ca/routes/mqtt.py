@@ -1,6 +1,7 @@
 from flask import current_app
 from flask_mqtt import Mqtt
 from flask import Blueprint
+from cryptography.hazmat.primitives.asymmetric.rsa import RSAPublicKey
 
 import os, json
 
@@ -126,6 +127,7 @@ def on_mqtt_message(client, userdata, message):
             print("\nTOPIC VENDEUR : SECRET RECU.")
         
         elif code == 3: # Demande de certificat
+            from app import certificat_instance
             print(f"TOPIC VENDEUR : Je recois une demande de certificat.")
             
             # Récuperation de la clé AES des communications avec le vendeur
@@ -134,8 +136,11 @@ def on_mqtt_message(client, userdata, message):
                 print("TOPIC VENDEUR: Erreur lors de la récuperation de la clé AES du vendeur depuis le dict.")
                 return None
             
+            # Mise en forme des données reçus
             dataUserEncrypted = message_data['dataUser']
             pubKeyEncrypted = message_data['pubKey']
+            
+            # Décryptage des données reçus
             result = decrypt_data_request_certificat(aes_instance, aesKeySeller, dataUserEncrypted, pubKeyEncrypted, True)
             if result is not None:
                 dataUserDecrypted, pubKeyDecrypted = result
@@ -143,8 +148,32 @@ def on_mqtt_message(client, userdata, message):
                 print("Une erreur s'est produite lors du déchiffrement des données.")
                 return None
             
-            # print(pubKeyDecrypted)
-            # print(dataUserDecrypted)
+            # Pour accéder aux éléments du dictionnaire
+            data_json = json.loads(dataUserDecrypted)
+
+            pubKeyRSAPublicKey = rsa_instance.receive_pub_key_pem(pubKeyDecrypted.decode('utf-8'))
+            if not isinstance(pubKeyRSAPublicKey, RSAPublicKey):
+                print("ERROR: La variable 'pubKeyRSAPublicKey' n'est pas au format RSAPublicKey.")
+                return None
+            
+            certificat = certificat_instance.creer_certificat_signe_par_ca(rsa_instance.get_private_key(), pubKeyRSAPublicKey, data_json, 1)
+            if certificat is None:
+                return None
+            print(certificat)
+            
+            certificat_encoded = certificat_instance.convert_bytes_certificat_to_str(certificat)
+            if certificat_encoded is None:
+                return None
+            print("certificat_encoded: \n", certificat_encoded)
+            
+            message = {
+                'code': 2,
+                'data': certificat_encoded
+            }
+            
+            publish_message(os.getenv("TOPIC_PUBLISH_SELLER"), json.dumps(message))
+            print("TOPIC SELLER : MESSAGE CODE 1 PUBLIE.")
+            
         else:
             # Code inconnu
             print("Code inconnu")

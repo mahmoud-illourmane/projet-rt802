@@ -43,7 +43,7 @@ app.config['MQTT_REFRESH_TIME'] = os.getenv("MQTT_REFRESH_TIME")
 # Instanciation des classes RSA et AES
 rsa_instance = ChiffrementRSA()
 aes_instance = ChiffrementAES()
-crl_instance = Certificat()
+certificat_instance = Certificat()
 
 """
 |

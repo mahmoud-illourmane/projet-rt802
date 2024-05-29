@@ -50,60 +50,58 @@
                     </div>
 
                     <div class="client-operations operations">
-                        <h6 class="c_1">Opérations disponibles</h6>
+                        <h5 class="c_1 text-center">Opérations disponibles</h5>
+                        <hr>
 
-                        <div class="operations-btns">
-                            <div class="operation-btn mb-2 bg_2">
-                                <label for="operation" class="form-label">Obtenir la clé publique</label>
+                        <div class="operations-btns mt-1">
+                            <!-- Obtenir la clé publique -->
+                            <div class="operation-btn mb-2 bg_1">
+                                <label for="operation" class="form-label">Obtenir une clé publique</label>
                                 <select class="form-select" aria-label="Default select example" v-model="selectedPubKeyReq">
                                     <option selected disabled>Choisir</option>
                                     <option value="vendeur">Vendeur</option>
                                     <option value="ca">Ca</option>
                                 </select>
                                 <button class="btn btn-sm btn-success mt-2" type="button" :disabled="selectedPubKeyReq === null" @click="getPubKey">Obtenir</button>
-                            </div>
+                            </div> <!-- Obtenir la clé publique -->
 
                             <div class="verifs-cles-aes-rsa bg_2">
-                                <label for="operation" class="form-label">Vérifier la disponibilité des clés</label>
+                                <label for="operation" class="form-label">Vérifier la disponibilité des clés sur le serveur</label>
                                 <div class="div-flex">
                                     <div class="operation-btn mb-2 bg_2">
                                         <div class="btns-flex">
-                                            <button @click="checkAesKey('ca')" class="btn btn-sm btn-primary" type="button">AES A UTILISER AVEC LA CA</button>
-                                            <button @click="checkAesKey('seller')" class="btn btn-sm btn-success" type="button">AES A UTILISER AVEC LE VENDEUR</button>
-                                        </div>
-                                    </div>
-
-                                    <div class="operation-btn mb-2 bg_2">
-                                        <div class="btns-flex">
-                                            <button @click="checkRsaKey" class="btn btn-sm btn-primary" type="button">RSA</button>
+                                            <button @click="checkAesKey('ca')" class="btn btn-sm btn-primary" type="button">AES/CA</button>
+                                            <button @click="checkAesKey('seller')" class="btn btn-sm btn-success" type="button">AES/VENDEUR</button>
+                                            <button @click="checkRsaKey" class="btn btn-sm btn-warning" type="button">RSA/CLIENT</button>
                                         </div>
                                     </div>
                                 </div>
                             </div>
-                            
-                            <div class="operation-btn mb-2 bg_1">
-                                <label for="operation" class="form-label">Générer une paire de clés RSA 2048</label>
-                                <button @click="generateRsaKey" class="btn btn-sm btn-primary">Générer</button>
-                            </div>
 
                             <div class="div-flex">
                                 <div class="operation-btn gap-2 mb-2 bg_2">
-                                    <label for="operation" class="form-label">Générer une clé AES</label>
+                                    <label for="operation" class="form-label">Génération de clés AES</label>
                                     <button @click="generateAesKey('seller')" class="btn btn-sm btn-primary">A Utiliser avec le vendeur</button>
                                     <button @click="generateAesKey('ca')" class="btn btn-sm btn-success">A Utiliser avec la CA</button>
                                 </div>
     
                                 <div class="operation-btn mb-2 bg_1">
                                     <label for="operation" class="form-label">Échanges de secrets</label>
-                                    <button @click="secretExchangeCa" class="btn btn-sm btn-primary">CA</button>
+                                    <button @click="secretExchangeCa" class="btn btn-sm btn-primary">Avec la CA</button>
+                                    <button @click="secretExchangeCa" class="btn btn-sm btn-success">Avec le Vendeur</button>
                                 </div>
+                            </div>
+
+                            <div class="operation-btn mb-2 bg_1">
+                                <label for="operation" class="form-label">Générer une paire de clés RSA 2048</label>
+                                <button @click="generateRsaKey" class="btn btn-sm btn-primary">Générer ma paire de clés</button>
                             </div>
                         </div>
                     </div>
 
                     <div class="client-print print">
                         <h6 class="c_1">Sortie</h6> 
-                        <a @click="cleanPrintClient" class="material-icons c_2">cleaning_services</a>
+                        <a @click="cleanPrintClient" class="material-icons c_2 cleaner_icon">cleaning_services</a>
                         <div class="print-final">
                             {{ printClient }}
                         </div>
@@ -124,12 +122,13 @@
                     </div>
 
                     <div class="vendeur-operations operations">
-                        <h6 class="c_1">Opérations disponibles</h6>
+                        <h5 class="c_1 text-center">Opérations disponibles</h5>
+                        <hr>
 
-                        <div class="operations-btns">
+                        <div class="operations-btns mt-1">
                             <!-- Obtenir la clé publique -->
                             <div class="operation-btn mb-2 bg_2">
-                                <label for="operation" class="form-label">Obtenir la clé publique</label>
+                                <label for="operation" class="form-label">Obtenir une clé publique</label>
                                 <select class="form-select" aria-label="Default select example" v-model="selectedPubKeyReq">
                                     <option selected disabled>Choisir</option>
                                     <option value="client">Client</option>
@@ -144,30 +143,19 @@
                                 <div class="div-flex">
                                     <div class="operation-btn mb-2 bg_2">
                                         <div class="btns-flex">
-                                            <button @click="checkAesKey('ca')" class="btn btn-sm btn-primary" type="button">AES A UTILISER AVEC LA CA</button>
-                                            <button @click="checkAesKey('client')" class="btn btn-sm btn-success" type="button">AES A UTILISER AVEC LE CLIENT</button>
-                                        </div>
-                                    </div>
-
-                                    <div class="operation-btn mb-2 bg_2">
-                                        <div class="btns-flex">
-                                            <button @click="checkRsaKey" class="btn btn-sm btn-primary" type="button">RSA</button>
+                                            <button @click="checkAesKey('ca')" class="btn btn-sm btn-primary" type="button">AES/CA</button>
+                                            <button @click="checkAesKey('client')" class="btn btn-sm btn-success" type="button">AES/CLIENT</button>
+                                            <button @click="checkRsaKey" class="btn btn-sm btn-primary" type="button">RSA/VENDEUR</button>
                                         </div>
                                     </div>
                                 </div>
                             </div> <!-- Vérifie la disponibilité des clés -->
-                            
-                            <!-- Générations des clés RSA -->
-                            <div class="operation-btn mb-2 bg_2">
-                                <label for="operation" class="form-label">Générer une paire de clés RSA 2048</label>
-                                <button @click="generateRsaKey" class="btn btn-sm btn-primary">Générer</button>
-                            </div> <!-- Générations des clés RSA -->
 
                             <!-- Générations CLES, Echange Secret, Demande Certificat -->
                             <div class="div-flex">
                                 <!-- Générations de clé AES -->
                                 <div class="operation-btn mb-2 bg_2">
-                                    <label for="operation" class="form-label">Générer une clé AES</label>
+                                    <label for="operation" class="form-label">Génération de clés AES</label>
                                     <button @click="generateAesKey('client')" class="btn btn-sm btn-primary">A Utiliser avec client</button>
                                     <button @click="generateAesKey('ca')" class="btn btn-sm btn-success">A Utiliser avec la CA</button>
                                 </div> <!-- Générations de clé AES -->
@@ -175,7 +163,7 @@
                                 <!-- Echange du secret -->
                                 <div class="operation-btn mb-2 bg_1">
                                     <label for="operation" class="form-label">Échanges du secret</label>
-                                    <button @click="secretExchangeCa" class="btn btn-sm btn-primary">CA</button>
+                                    <button @click="secretExchangeCa" class="btn btn-sm btn-primary">Avec la CA</button>
                                 </div> <!-- Echange du secret -->
 
                                 <!-- Demande de certificat -->
@@ -229,13 +217,31 @@
                                     </div>
                                 </div> <!-- Demande de certificat -->
                             </div> <!-- Générations CLES, Echange Secret, Demande Certificat -->
+
+                            <!-- Générations des clés RSA -->
+                            <div class="operation-btn mb-2 bg_2">
+                                <label for="operation" class="form-label">Générer une paire de clés RSA 2048</label>
+                                <button @click="generateRsaKey" class="btn btn-sm btn-primary">Générer</button>
+                            </div> <!-- Générations des clés RSA -->
+
+                            <!-- Certificats à mettre à disposition -->
+                            <div class="operation-btn mb-2 bg_2">
+                                <h5>Scénarios</h5>
+                                <label for="operation" class="form-label">Choisir le certificat à envoyer au client</label>
+                                <select class="form-select" aria-label="Default select example" v-model="selectedPubKeyReq">
+                                    <option selected disabled>Choisir</option>
+                                    <option value="client">Client</option>
+                                    <option value="ca">Ca</option>
+                                </select>
+                                <button class="btn btn-sm btn-success mt-2" type="button" :disabled="selectedPubKeyReq === null" @click="getPubKey">Choisir ce certificat</button>
+                            </div> <!-- Certificats à mettre à disposition -->
                         </div>
 
                     </div>
 
                     <div class="vendeur-print print">
                         <h6 class="c_1">Sortie</h6>
-                        <a @click="cleanPrintVendeur" class="material-icons c_2">cleaning_services</a>
+                        <a @click="cleanPrintVendeur" class="material-icons c_2 cleaner_icon">cleaning_services</a>
                         <div class="print-final">
                             {{ printVendeur }}
                         </div>
@@ -272,7 +278,7 @@
                     </div>
                     
                     <!-- Liste des clé AES -->
-                    <a @click="getAllAesKeys" class="material-icons c_1">refresh</a>
+                    <a @click="getAllAesKeys" class="material-icons c_1 cleaner_icon">refresh</a>
                     <div class="operation-btn mb-2 bg_2">
                         <label for="operation" class="form-label">Liste des clés AES à disposition</label>
                         <select :disabled="aesKeys.length === 0" class="form-select" aria-label="Aes list keys">
@@ -285,7 +291,7 @@
 
                 <div class="ca-print print">
                     <h6 class="c_1">Sortie</h6>
-                    <a @click="cleanPrintCa" class="material-icons c_2">cleaning_services</a>
+                    <a @click="cleanPrintCa" class="material-icons c_2 cleaner_icon">cleaning_services</a>
                     <div class="print-final">
                         {{ printCa }}
                     </div>
@@ -304,7 +310,7 @@
 
     <!-- VueJS3 -->
     <script type="module">
-        import { createApp, onMounted, watchEffect, ref } from 'vue'
+        import { createApp, onMounted, watch, watchEffect, ref } from 'vue'
         
         // Main app
         createApp({
@@ -339,20 +345,29 @@
                 let printVendeur = ref('');
 
                 // Génération du certificat
-                let country_name = ref('');
-                let state_or_province_name = ref('');
-                let locality_name = ref('');
-                let organization_name = ref('');
-                let common_name = ref('');
+                let country_name = ref('FR');
+                let state_or_province_name = ref('MARNE');
+                let locality_name = ref('REIMS');
+                let organization_name = ref('IM-CORP');
+                let common_name = ref('Mahmoud');
 
                 let btnHandleGenerateCertificat = ref(false);
-
                 
                 /*==== FONCTIONS ====*/
                     /*== TOOLS ==*/
                         function cleanPrintVendeur() {
                             printVendeur.value = '';
                         }
+                        
+                        function autoClearPrintVendeur() {
+                            setTimeout(() => {
+                                printVendeur.value = '';
+                            }, 10000);
+                        }
+
+                        watch(printVendeur, () => {
+                            autoClearPrintVendeur();
+                        });
                     /*== TOOLS ==*/
 
                     /*== VERIFY ==*/
@@ -753,6 +768,14 @@
                         function cleanPrintClient() {
                             printClient.value = '';
                         }
+                        function autoClearPrintClient() {
+                            setTimeout(() => {
+                                printClient.value = '';
+                            }, 10000);
+                        }
+                        watch(printClient, () => {
+                            autoClearPrintClient();
+                        });
                     /*== TOOLS ==*/
 
                     /*== VERIFY ==*/
@@ -1096,6 +1119,14 @@
                         function cleanPrintCa() {
                             printCa.value = '';
                         }
+                        function autoClearPrintCa() {
+                            setTimeout(() => {
+                                printCa.value = '';
+                            }, 10000);
+                        }
+                        watch(printCa, () => {
+                            autoClearPrintCa();
+                        });
                     /*== TOOLS ==*/
 
                     /*
@@ -1184,7 +1215,7 @@
                     */
                     async function a_checkSelfSignedCertificate() {
                         try {
-                            const response = await axios.get('http://127.0.0.1:5000/ca/check-ca-crl');
+                            const response = await axios.get('http://127.0.0.1:5000/ca/check-ca-certificat');
                             const statusCode = response.status;
 
                             if(statusCode == 200) {

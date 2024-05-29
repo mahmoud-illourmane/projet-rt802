@@ -117,7 +117,7 @@ def checkAESKey():
     if check_aes:
         return jsonify({'message': f"La Clé AES à utiliser avec '{name}' est présente."}), 200
     else:
-        return jsonify({'message': f"Aucune clé AES trouvée pour le '{name}' domaine."}), 200
+        return jsonify({'message': f"Aucune clé AES n'a été trouvée pour le domaine '{name}'."}), 200
     
 #   END
 #   Opérations internes au client

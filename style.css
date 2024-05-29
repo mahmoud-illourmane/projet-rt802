@@ -115,7 +115,7 @@
 
     .print-final {
         width: 100%;          
-        max-height: 400px;     
+        max-height: 200px;     
         overflow: auto;        
         word-wrap: break-word; 
         border: 1px solid #ccc; 
@@ -127,6 +127,9 @@
     .btns-flex {
         display: flex;
         gap: 10px;
+    }
+    .cleaner_icon {
+        cursor: pointer;
     }
 /*== END/UI/UX ==*/
 
