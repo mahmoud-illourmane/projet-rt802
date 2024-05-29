@@ -41,7 +41,6 @@
 
     <div class="projet">
         <div class="client-vendeur">
-            
             <!-- CLIENT -->
             <div class="client" id="client">
                 <div v-if="clientAvailable" class="client-content">
@@ -64,11 +63,21 @@
                                 <button class="btn btn-sm btn-success mt-2" type="button" :disabled="selectedPubKeyReq === null" @click="getPubKey">Obtenir</button>
                             </div>
 
-                            <div class="operation-btn mb-2 bg_2">
+                            <div class="verifs-cles-aes-rsa bg_2">
                                 <label for="operation" class="form-label">Vérifier la disponibilité des clés</label>
-                                <div class="btns-flex">
-                                    <button @click="checkRsaKey" class="btn btn-sm btn-primary" type="button">RSA</button>
-                                    <button @click="checkAesKey" class="btn btn-sm btn-success" type="button">AES</button>
+                                <div class="div-flex">
+                                    <div class="operation-btn mb-2 bg_2">
+                                        <div class="btns-flex">
+                                            <button @click="checkAesKey('ca')" class="btn btn-sm btn-primary" type="button">AES A UTILISER AVEC LA CA</button>
+                                            <button @click="checkAesKey('seller')" class="btn btn-sm btn-success" type="button">AES A UTILISER AVEC LE VENDEUR</button>
+                                        </div>
+                                    </div>
+
+                                    <div class="operation-btn mb-2 bg_2">
+                                        <div class="btns-flex">
+                                            <button @click="checkRsaKey" class="btn btn-sm btn-primary" type="button">RSA</button>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                             
@@ -78,9 +87,10 @@
                             </div>
 
                             <div class="div-flex">
-                                <div class="operation-btn mb-2 bg_2">
+                                <div class="operation-btn gap-2 mb-2 bg_2">
                                     <label for="operation" class="form-label">Générer une clé AES</label>
-                                    <button @click="generateAesKey" class="btn btn-sm btn-primary">Générer</button>
+                                    <button @click="generateAesKey('seller')" class="btn btn-sm btn-primary">A Utiliser avec le vendeur</button>
+                                    <button @click="generateAesKey('ca')" class="btn btn-sm btn-success">A Utiliser avec la CA</button>
                                 </div>
     
                                 <div class="operation-btn mb-2 bg_1">
@@ -117,6 +127,7 @@
                         <h6 class="c_1">Opérations disponibles</h6>
 
                         <div class="operations-btns">
+                            <!-- Obtenir la clé publique -->
                             <div class="operation-btn mb-2 bg_2">
                                 <label for="operation" class="form-label">Obtenir la clé publique</label>
                                 <select class="form-select" aria-label="Default select example" v-model="selectedPubKeyReq">
@@ -125,32 +136,49 @@
                                     <option value="ca">Ca</option>
                                 </select>
                                 <button class="btn btn-sm btn-success mt-2" type="button" :disabled="selectedPubKeyReq === null" @click="getPubKey">Obtenir</button>
-                            </div>
+                            </div> <!-- Obtenir la clé publique -->
 
-                            <div class="operation-btn mb-2 bg_2">
+                            <!-- Vérifie la disponibilité des clés -->
+                            <div class="verifs-cles-aes-rsa bg_1">
                                 <label for="operation" class="form-label">Vérifier la disponibilité des clés</label>
-                                <div class="btns-flex">
-                                    <button @click="checkRsaKey" class="btn btn-sm btn-primary" type="button">RSA</button>
-                                    <button @click="checkAesKey" class="btn btn-sm btn-success" type="button">AES</button>
+                                <div class="div-flex">
+                                    <div class="operation-btn mb-2 bg_2">
+                                        <div class="btns-flex">
+                                            <button @click="checkAesKey('ca')" class="btn btn-sm btn-primary" type="button">AES A UTILISER AVEC LA CA</button>
+                                            <button @click="checkAesKey('client')" class="btn btn-sm btn-success" type="button">AES A UTILISER AVEC LE CLIENT</button>
+                                        </div>
+                                    </div>
+
+                                    <div class="operation-btn mb-2 bg_2">
+                                        <div class="btns-flex">
+                                            <button @click="checkRsaKey" class="btn btn-sm btn-primary" type="button">RSA</button>
+                                        </div>
+                                    </div>
                                 </div>
-                            </div>
+                            </div> <!-- Vérifie la disponibilité des clés -->
                             
-                            <div class="operation-btn mb-2 bg_1">
+                            <!-- Générations des clés RSA -->
+                            <div class="operation-btn mb-2 bg_2">
                                 <label for="operation" class="form-label">Générer une paire de clés RSA 2048</label>
                                 <button @click="generateRsaKey" class="btn btn-sm btn-primary">Générer</button>
-                            </div>
+                            </div> <!-- Générations des clés RSA -->
 
+                            <!-- Générations CLES, Echange Secret, Demande Certificat -->
                             <div class="div-flex">
+                                <!-- Générations de clé AES -->
                                 <div class="operation-btn mb-2 bg_2">
                                     <label for="operation" class="form-label">Générer une clé AES</label>
-                                    <button @click="generateAesKey" class="btn btn-sm btn-primary">Générer</button>
-                                </div>
-    
+                                    <button @click="generateAesKey('client')" class="btn btn-sm btn-primary">A Utiliser avec client</button>
+                                    <button @click="generateAesKey('ca')" class="btn btn-sm btn-success">A Utiliser avec la CA</button>
+                                </div> <!-- Générations de clé AES -->
+                                
+                                <!-- Echange du secret -->
                                 <div class="operation-btn mb-2 bg_1">
-                                    <label for="operation" class="form-label">Échanges de secrets</label>
+                                    <label for="operation" class="form-label">Échanges du secret</label>
                                     <button @click="secretExchangeCa" class="btn btn-sm btn-primary">CA</button>
-                                </div>
+                                </div> <!-- Echange du secret -->
 
+                                <!-- Demande de certificat -->
                                 <div class="operation-btn mb-2 bg_1">
                                     <label for="operation" class="form-label">Demander un certificat à la CA</label>
                                     <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#sellerGenerateCertificat">Demander</button>
@@ -199,10 +227,8 @@
                                             </div>
                                         </div>
                                     </div>
-                                </div>
-                            </div>
-
-                            
+                                </div> <!-- Demande de certificat -->
+                            </div> <!-- Générations CLES, Echange Secret, Demande Certificat -->
                         </div>
 
                     </div>
@@ -239,12 +265,22 @@
                             <label for="operation" class="form-label">Vérifier la présence d'un certificat autosigné</label>
                             <button @click="checkSelfSignedCertificate" class="btn btn-sm btn-primary">Vérifier</button>
                         </div>
-                        <div class="operation-btn mb-2 bg_1">
+                        <div class="operation-btn mb-2 bg_2">
                             <label for="operation" class="form-label">Générer un certificat x509 autosigné</label>
                             <button @click="generateSelfSignedCertificate" class="btn btn-sm btn-primary">Générer</button>
                         </div>
                     </div>
                     
+                    <!-- Liste des clé AES -->
+                    <a @click="getAllAesKeys" class="material-icons c_1">refresh</a>
+                    <div class="operation-btn mb-2 bg_2">
+                        <label for="operation" class="form-label">Liste des clés AES à disposition</label>
+                        <select :disabled="aesKeys.length === 0" class="form-select" aria-label="Aes list keys">
+                            <option v-for="aesKey in aesKeys" :key="aesKey.identifiant" :value="aesKey.key">
+                                {{ aesKey.identifiant }} : {{ aesKey.key }}
+                            </option>
+                        </select>
+                    </div>
                 </div>
 
                 <div class="ca-print print">
@@ -289,7 +325,7 @@
                 }
             }
         }).mount('#app');
-
+        
         // Vendeur
         createApp({
             setup() {
@@ -328,19 +364,20 @@
                                 const result = await a_checkRsaKey();
                                 printVendeur.value = result;
                             } catch (error) {
-                                console.error('Erreur :', error);
+                                console.error('Erreur (checkRsaKey) : ', error);
                             }
                         }
 
                         /**
-                        *   Vérifie que le vendeur dispose d'une clé AES.
+                        *   Vérifie que le vendeur dispose d'une clé AES à utiliser 
+                        *   avec la CA ou le Client.
                         */
-                        async function checkAesKey() {
+                        async function checkAesKey(name) {
                             try {
-                                const result = await a_checkAesKey();
+                                const result = await a_checkAesKey(name);
                                 printVendeur.value = result;
                             } catch (error) {
-                                console.error('VENDEUR : Erreur :', error);
+                                console.error('VENDEUR : Erreur (checkAesKey) :', error);
                             }
                         }
                     /*== END/VERIFY ==*/
@@ -388,18 +425,19 @@
                                 const result = await a_generateRsaKey();
                                 printVendeur.value = result;
                             } catch (error) {
-                                console.error('Erreur :', error);
+                                console.error('VENDEUR: Erreur (generateRsaKey) :', error);
                             }
                         }
 
                         /*
                         *   Génère la clé AES.
                         */
-                        async function generateAesKey() {
+                        async function generateAesKey(name) {
                             try {
-                                const result = await a_generateAesKey();
+                                const result = await a_generateAesKey(name);
                                 printVendeur.value = result;
                             } catch (error) {
+                                printVendeur.value = error;
                                 console.error('Erreur :', error);
                             }
                         }
@@ -413,12 +451,13 @@
                                 const result = await a_secretExchangeCa();
                                 printVendeur.value = result;
                             } catch (error) {
+                                console.log("VENDEUR Erreur (secretExchangeCa) : ", error)
                                 printVendeur.value = error;
                             }
                         }
 
-
                         // Vérifie que tous les champs sont remplis
+                        // Pour envoyer le certificat.
                         watchEffect(() => {
                             btnHandleGenerateCertificat.value = common_name.value.trim() !== '' &&
                                                                 organization_name.value.trim() !== '' &&
@@ -428,8 +467,8 @@
                         });
 
                         /**
-                        *   Permet de faire l'échange du secret
-                        *   entre le client et la CA.
+                        *   Cette fonction envoi la requête à la CA 
+                        *   pour générer un certificat.
                         */
                         async function handleGenerateCertificat() {
                             try {
@@ -444,6 +483,7 @@
                                 const result = await a_handleGenerateCertificat(dataToSend);
                                 printVendeur.value = result;
                             } catch (error) {
+                                console.log("VENDEUR Erreur (handleGenerateCertificat) : ", error)
                                 printVendeur.value = error;
                             } finally {
                                 common_name.value = '';
@@ -499,11 +539,17 @@
                         }
 
                         /*
-                        *   Vérifie la présence d'une paire de clé RSA sur le client.
+                        *   Vérifie la présence d'une clé AES à utiliser pour les communications avec 
+                        *   la Ca ou le Client.
                         */
-                        async function a_checkAesKey() {
+                        async function a_checkAesKey(name) {
                             try {
-                                const response = await axios.get('http://127.0.0.1:5002/seller/api/check-aes-key');
+                                const response = await axios.get('http://127.0.0.1:5002/seller/api/check-aes-key',
+                                {
+                                    params: {
+                                        name: name
+                                    }
+                                });
                                 const statusCode = response.status;
 
                                 if(statusCode == 200) {
@@ -512,7 +558,7 @@
                                     return response.data.error;
                                 }
                             } catch (err) {
-                                console.log('VENDEUR : Erreur lors de la requête API :', err.message);
+                                console.log('VENDEUR : Erreur lors de la requête API (a_checkAesKey) :', err.message);
                             } finally { }
                         }
                     /*== END/VERIFY ==*/
@@ -599,9 +645,14 @@
                         /*
                         *   Génère une clé AES.
                         */
-                        async function a_generateAesKey() {
+                        async function a_generateAesKey(name) {
                             try {
-                                const response = await axios.get('http://127.0.0.1:5002/seller/api/generate-aes-key');
+                                const response = await axios.get('http://127.0.0.1:5002/seller/api/generate-aes-key',
+                                {
+                                    params: {
+                                        name: name
+                                    }
+                                });
                                 const statusCode = response.status;
 
                                 if(statusCode == 200) {
@@ -610,8 +661,9 @@
                                     return response.data.error;
                                 }
                             } catch (err) {
-                                console.log('CLIENT : Erreur lors de la requête API (a_generateAesKey) :', err.message);
-                            } finally { }
+                                return err;
+                                console.log('VENDEUR : Erreur lors de la requête API (a_generateAesKey) :', err.message);
+                            }
                         }
                     
                         /*
@@ -640,10 +692,10 @@
                                 if (statusCode == 200) {
                                     return response.data.message;
                                 } else {
-                                    return response.data.error;
+                                    return response.data.message;
                                 }
                             } catch (err) {
-                                console.log('VENDEUR : Erreur lors de la requête API :', err.message);
+                                console.log('VENDEUR : Erreur lors de la requête API (a_handleGenerateCertificat) : ', err.message);
                             }
                         }
                     /*== END/CREATE ==*/
@@ -720,9 +772,9 @@
                         /**
                         *   Vérifie que le client dispose d'une clé AES.
                         */
-                        async function checkAesKey() {
+                        async function checkAesKey(name) {
                             try {
-                                const result = await a_checkAesKey();
+                                const result = await a_checkAesKey(name);
                                 printClient.value = result;
                             } catch (error) {
                                 console.error('Client : Erreur :', error);
@@ -780,11 +832,12 @@
                         /*
                         *   Génère la clé AES.
                         */
-                        async function generateAesKey() {
+                        async function generateAesKey(name) {
                             try {
-                                const result = await a_generateAesKey();
+                                const result = await a_generateAesKey(name);
                                 printClient.value = result;
                             } catch (error) {
+                                printClient.value = error;
                                 console.error('Erreur :', error);
                             }
                         }
@@ -823,7 +876,7 @@
                                     vendeurAvailable.value = false;
                                 }
                             } catch (err) {
-                                console.log('CLIENT : Erreur lors de la requête API (a_generateAesKey) :', err.message);
+                                console.log('CLIENT : Erreur lors de la requête API (checkClient) :', err.message);
                             }
                         }
 
@@ -841,16 +894,22 @@
                                     return response.data.error;
                                 }
                             } catch (err) {
-                                console.log('CLIENT : Erreur lors de la requête API (a_generateAesKey) :', err.message);
+                                console.log('CLIENT : Erreur lors de la requête API (a_checkRsaKey) :', err.message);
                             }
                         }
 
                         /*
-                        *   Vérifie la présence d'une paire de clé RSA sur le client.
+                        *   Vérifie la présence de clés AES
+                        *   soit celle à utiliser avec la CA soit pour Vendeur.
                         */
-                        async function a_checkAesKey() {
+                        async function a_checkAesKey(name) {
                             try {
-                                const response = await axios.get('http://127.0.0.1:5001/client/api/check-aes-key');
+                                const response = await axios.get('http://127.0.0.1:5001/client/api/check-aes-key',
+                                {
+                                    params: {
+                                        name: name
+                                    }
+                                });
                                 const statusCode = response.status;
 
                                 if(statusCode == 200) {
@@ -859,7 +918,7 @@
                                     return response.data.error;
                                 }
                             } catch (err) {
-                                console.log('CLIENT : Erreur lors de la requête API (a_generateAesKey) :', err.message);
+                                console.log('CLIENT : Erreur lors de la requête API (a_checkAesKey) :', err.message);
                             } finally { }
                         }
                     /*== END/VERIFY ==*/
@@ -891,7 +950,7 @@
                                     return responsePrintKey.data.data;
                                 }
                             } catch (err) {
-                                console.log('CLIENT : Erreur lors de la requête API (a_generateAesKey) :', err.message);
+                                console.log('CLIENT : Erreur lors de la requête API (a_getPubKeyCA) :', err.message);
                                 return -1; // ou une autre valeur pour indiquer une erreur
                             }
                         }
@@ -918,7 +977,7 @@
                                     throw new Error(response.data.error);
                                 }
                             } catch (err) {
-                                console.log('CLIENT : Erreur lors de la requête API(a_generateAesKey) :', err.message);
+                                console.log('CLIENT : Erreur lors de la requête API(a_getPubKeyVendeur) :', err.message);
                                 return -1; // ou une autre valeur pour indiquer une erreur
                             }
                         }
@@ -941,16 +1000,21 @@
                                     return response.data.error;
                                 }
                             } catch (err) {
-                                console.log('CLIENT : Erreur lors de la requête API (a_generateAesKey) :', err.message);
+                                console.log('CLIENT : Erreur lors de la requête API (a_generateRsaKey) :', err.message);
                             } finally { }
                         }
 
                         /*
                         *   Génère une clé AES.
                         */
-                        async function a_generateAesKey() {
+                        async function a_generateAesKey(name) {
                             try {
-                                const response = await axios.get('http://127.0.0.1:5001/client/api/generate-aes-key');
+                                const response = await axios.get('http://127.0.0.1:5001/client/api/generate-aes-key',
+                                {
+                                    params: {
+                                        name: name
+                                    }
+                                });
                                 const statusCode = response.status;
 
                                 if(statusCode == 200) {
@@ -959,8 +1023,9 @@
                                     return response.data.error;
                                 }
                             } catch (err) {
+                                return err;
                                 console.log('CLIENT : Erreur lors de la requête API (a_generateAesKey) :', err.message);
-                            } finally { }
+                            }
                         }
 
                         /*
@@ -977,7 +1042,7 @@
                                     return response.data.error;
                                 }
                             } catch (err) {
-                                console.log('CLIENT : Erreur lors de la requête API (a_generateAesKey) :', err.message);
+                                console.log('CLIENT : Erreur lors de la requête API (a_secretExchangeCa) :', err.message);
                             }
                         }                        
 
@@ -1021,9 +1086,10 @@
                 let error = ref('');
 
                 let caAvailable = ref(false);
+                let printCa = ref('');
 
-                let printCa = ref('')
-
+                // Liste des clés AES
+                let aesKeys = ref([]);
 
                 /*==== FONCTIONS ====*/
                     /*== TOOLS ==*/
@@ -1032,6 +1098,9 @@
                         }
                     /*== TOOLS ==*/
 
+                    /*
+                    *   Génère le certificat autosigné de la CA.
+                    */
                     async function generateSelfSignedCertificate() {
                         try {
                             const result = await a_generateSelfSignedCertificate();
@@ -1041,6 +1110,9 @@
                         }
                     }
 
+                    /*
+                    *   Affiche le certificat autosigné de la CA.
+                    */
                     async function checkSelfSignedCertificate() {
                         try {
                             const result = await a_checkSelfSignedCertificate();
@@ -1049,10 +1121,27 @@
                             console.error('Erreur :', error);
                         }
                     }
+
+                    /*
+                    *   Retourne au format base64 toutes les clés AES
+                    *   dont la CA dispose.
+                    */
+                    async function getAllAesKeys() {
+                        try {
+                            aesKeys.value = [];
+                            const result = await a_getAllAesKeys();
+                            if (result !== -1) {
+                                aesKeys.value = Object.entries(result).map(([identifiant, key]) => ({ identifiant, key }));
+                            }
+                        } catch (error) {
+                            console.error('Erreur :', error);
+                        }
+                    }
                 /*==== END/FONCTIONS ====*/
 
+                /*==== ************** ====*/
                 /*==== REQUETES AXIOS ====*/
-                
+                /*==== ************** ====*/
                     /*
                     *   Vérifie que le serveur de la CA est allumé.
                     */
@@ -1064,15 +1153,15 @@
                             if(statusCode == 200) {
                                 caAvailable.value = true;
                             } else {
-                                vendeurAvailable.value = false;
+                                caAvailable.value = false;
                             }
                         } catch (err) {
-                            console.log('CA : Erreur lors de la requête API :', err.message);
-                        } finally {}
+                            console.log('CA : Erreur lors de la requête API (checkCa) :', err.message);
+                        }
                     }
 
                     /*
-                    *   Génère un certificat autosigné.
+                    *   Génère un certificat autosigné pour la CA.
                     */
                     async function a_generateSelfSignedCertificate() {
                         try {
@@ -1082,11 +1171,11 @@
                             if(statusCode == 200) {
                                 return response.data.data;
                             } else {
-                                console.log('CA : Erreur lors de la requête API :', err.message);
+                                console.log('CA : Erreur lors de la requête API (a_generateSelfSignedCertificate) : ', err.message);
                                 return -1;
                             }
                         } catch (err) {
-                            console.log('CA : Erreur lors de la requête API :', err.message);
+                            console.log('CA : Erreur lors de la requête API (a_generateSelfSignedCertificate) : ', err.message);
                         } finally {}
                     }
 
@@ -1101,26 +1190,52 @@
                             if(statusCode == 200) {
                                 return response.data.data;
                             } else {
-                                console.log('CA : Erreur lors de la requête API :', err.message);
+                                console.log('CA : Erreur lors de la requête API (a_checkSelfSignedCertificate) :', err.message);
                                 return -1;
                             }
                         } catch (err) {
-                            console.log('CA : Erreur lors de la requête API :', err.message);
+                            console.log('CA : Erreur lors de la requête API (a_checkSelfSignedCertificate) :', err.message);
                         } finally {}
                     }
+                    
+                    /*
+                    *   Retourne la liste de toutes les clé aes dont dispose la CA.
+                    */
+                    async function a_getAllAesKeys() {
+                        try {
+                            const response = await axios.get('http://127.0.0.1:5000/ca/api/get-all-aes-key');
+                            const statusCode = response.status;
+
+                            if(statusCode == 200) {
+                                return response.data.aes_keys_dic;
+                            } else {
+                                printCa.value = "ERROR: Erreur lors de la requête API (a_getAllAesKeys)";
+                                console.log('CA : Erreur lors de la requête API (a_getAllAesKeys)');
+                                return -1;
+                            }
+                        } catch (err) {
+                            printCa.value = "ERROR: " + err.message;
+                            console.log('CA : Erreur lors de la requête API (a_getAllAesKeys) : ', err.message);
+                        }
+                    }
+
                 /*==== END/REQUETES AXIOS ====*/
 
                 onMounted(async () => {
                     checkCa();
+                    if (caAvailable.value == true) {
+                        getAllAesKeys();
+                    }
                 });
 
                 return {
                     caAvailable,
-
                     printCa,
+                    aesKeys,
 
                     // Fonctions
                     cleanPrintCa,
+                    getAllAesKeys,
 
                     generateSelfSignedCertificate,
                     checkSelfSignedCertificate,

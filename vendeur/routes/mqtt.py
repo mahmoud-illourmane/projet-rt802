@@ -112,14 +112,14 @@ def publish_message(topic, payload):
             str: Un message d'erreur en cas d'échec, None en cas de succès.
     """
     if not topic or not payload:
-        return -1
+        return "Invalid topic or payload"
 
     try:
         mqtt.publish(topic, payload)
         return None
-    except Exception  as e:
-        print(f"Error: ", e)
-        return -1
+    except Exception as e:
+        print(f"ERROR PUBLISH:\n {e}")
+        return f"Failed to publish message: {e}"
 
 # Enregistrez les routes MQTT sur le blueprint mqtt_bp
 @mqtt_bp.route('/mqtt/test', methods=['GET'])

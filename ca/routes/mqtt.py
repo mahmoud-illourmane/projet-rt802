@@ -38,7 +38,7 @@ def on_mqtt_message(client, userdata, message):
     """
         Logique à exécuter lorsqu'un message est reçu.
     """
-    from src.tools.tools import receive_exchange_secret 
+    from src.tools.tools import receive_exchange_secret, decrypt_data_request_certificat
     from app import rsa_instance, aes_instance 
     
     payload = message.payload.decode()
@@ -70,11 +70,29 @@ def on_mqtt_message(client, userdata, message):
             
             elif code == 2: # Échange du secret avec le client
                 print(f"TOPIC CLIENT : Je recois une demande d'échange de secret.")
-                error = receive_exchange_secret(rsa_instance, aes_instance, message_data['data'], "client")
-                if error == None:
-                    print("ERROR SERVER: Erreur lors du décryptage du secret du client.")
-                else:
-                    print("\nTOPIC CLIENT : SECRET RECU.")
+                aes_key_encrypted_by_rsa_base64 = message_data['data']
+
+                # J'enlève l'encodage base64.
+                rsa_cipher = rsa_instance.decode_base64_encoded_rsa_cipher(aes_key_encrypted_by_rsa_base64)
+                if rsa_cipher is None:
+                    print("Error function: rsa_instance.decode_base64_encoded_rsa_cipher(aes_key_encrypted_by_rsa_base64)")
+                    return None
+                
+                # Je décrypte la clé AES.
+                decrypted_aes_key = rsa_instance.decrypter(rsa_cipher)
+                if decrypted_aes_key == None:
+                    print("Error function: rsa_instance.decrypter(rsa_cipher)")
+                    return None
+                
+                print("\n\nAFFICHAGE DE LA CLE DECRYPTE:\n", decrypted_aes_key, "\n\n")
+                
+                # J'ajoute la clé aes dans le dictionnaire des clés avec l'identifiant reçu dans "sender".
+                aes_instance.insert_aes_key(decrypted_aes_key, "client")
+                print("\n\nCLE AES AJOUTEE:\n", aes_instance.get_aes_key("client"))
+                
+                # receive_exchange_secret(rsa_instance, aes_instance, aes_key_encrypted_by_rsa_base64, "client") 
+                print("\nTOPIC VENDEUR : SECRET RECU.")
+            
             else:
                 # Code inconnu
                 print("Code inconnu")
@@ -102,32 +120,31 @@ def on_mqtt_message(client, userdata, message):
             
         elif code == 2: # Échange du secret avec le vendeur
             print(f"TOPIC VENDEUR : Je recois une demande d'échange de secret.")
-            print(f"\n\nAES ENCRYPTED:\n\n", message_data['data'])
-            
-            rsa_cipher = rsa_instance.decode_base64_encoded_rsa_cipher(message_data['data'])
-            if rsa_cipher == None:
-                print("Error rsa_instance.decrypt_cipher_base64(dataBase64)")
-                return None
-            print("\n\nRSA CIHPER WITHOUT BASE64: \n", rsa_cipher)
-            
-            decrypted_aes_key = rsa_instance.decrypter(rsa_cipher)
-            if decrypted_aes_key == None:
-                print("Error rsa_instance.decrypter(rsa_cipher)")
-                return None
-            print("\n\nAES DECRYPTED: \n", decrypted_aes_key)
-            
-            # error = receive_exchange_secret(rsa_instance, aes_instance, message_data['data'], "seller")
-            # if error == None:
-            #     print("ERROR SERVER: Erreur lors du décryptage du secret du vendeur.")
-            # else:   
-            #     print("\nTOPIC VENDEUR : SECRET RECU.")
+            aes_key_encrypted_by_rsa_base64 = message_data['data']
+
+            receive_exchange_secret(rsa_instance, aes_instance, aes_key_encrypted_by_rsa_base64, "seller")  
+            print("\nTOPIC VENDEUR : SECRET RECU.")
         
         elif code == 3: # Demande de certificat
-            print(f"TOPIC CLIENT : Je recois une demande de certificat.")
-            dataUser = aes_instance.decrypt(message_data['dataUser'], aes_instance.get_aes_key("seller"), True)
-            if dataUser == None:
-                print("ERREUR DECRYPTAGE DES DONNEES")
-            print(dataUser)
+            print(f"TOPIC VENDEUR : Je recois une demande de certificat.")
+            
+            # Récuperation de la clé AES des communications avec le vendeur
+            aesKeySeller = aes_instance.get_aes_key("seller")
+            if aesKeySeller is None:
+                print("TOPIC VENDEUR: Erreur lors de la récuperation de la clé AES du vendeur depuis le dict.")
+                return None
+            
+            dataUserEncrypted = message_data['dataUser']
+            pubKeyEncrypted = message_data['pubKey']
+            result = decrypt_data_request_certificat(aes_instance, aesKeySeller, dataUserEncrypted, pubKeyEncrypted, True)
+            if result is not None:
+                dataUserDecrypted, pubKeyDecrypted = result
+            else:
+                print("Une erreur s'est produite lors du déchiffrement des données.")
+                return None
+            
+            # print(pubKeyDecrypted)
+            # print(dataUserDecrypted)
         else:
             # Code inconnu
             print("Code inconnu")
@@ -150,6 +167,7 @@ def publish_message(topic, payload):
         mqtt.publish(topic, payload)
         return None
     except Exception  as e:
+        print("ERROR PUBLISH:\n", e)
         return e
 
 # Enregistrez les routes MQTT sur le blueprint mqtt_bp

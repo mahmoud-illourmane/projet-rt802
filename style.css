@@ -72,7 +72,7 @@
         justify-content: space-between;
     }
     .client, .vendeur { width: 45%; }
-    .client, .vendeur, .ca, .print-final { 
+    .client, .vendeur, .ca, .print-final, .verifs-cles-aes-rsa { 
         padding: 10px;
         border-radius: 10px;
     }
@@ -90,6 +90,9 @@
         background-color: #92e7a7;
     }
 
+    .verifs-cles-aes-rsa {
+        margin-bottom: 10px;
+    }
     .operations, .print {
         margin-top: 20px;
     }
@@ -107,6 +110,7 @@
     
     .operation-btn button {
         display: block;
+        margin-top: 5px;
     }
 
     .print-final {

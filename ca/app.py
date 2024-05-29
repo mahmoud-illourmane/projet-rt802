@@ -19,7 +19,7 @@ from routes.mqtt import mqtt_bp
 # Classes RSA AES & Certificat
 from encryption.rsa import ChiffrementRSA
 from encryption.aes import ChiffrementAES
-from src.classes.crl.certificat import Certificat
+from src.classes.certificat.certificat import Certificat
 
 # Configuration des logs pour l'utilisation du Launcher.py
 log_dir = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'client.log')

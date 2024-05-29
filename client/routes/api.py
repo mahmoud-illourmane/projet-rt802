@@ -52,17 +52,32 @@ def generateRSAKey():
     
 @api_bp.route('/client/api/generate-aes-key', methods=['GET'])
 def generateAESKey():
+    """
+        Cette route sert à créer des clés AES pour les utiliser
+        soit avec le CA soit pour le Vendeur.
+        
+        Args:
+            name (str): Un identifiant pour catégoriser la clé AES ['ca', 'seller']
+        Returns:
+            json: response
+    """
     if request.method != 'GET':
         return jsonify({"error": "Method Not Allowed"}), 405
-    
     from app import aes_instance
     
-    check_aes = aes_instance.get_my_aes_key()
-    if not check_aes:
-        aes_instance.generate_key()
-        return jsonify({'message': "Clé AES générée avec succès."}), 200
+    # Le nom de l'identifiant pour qui générer une clé AES.
+    name = request.args.get('name')
+    if name not in ['ca', 'seller']:
+        return jsonify({'message': "ERROR: Unknown name identifier."}), 200
+    
+    # Je vérifie que la clé n'existe pas déjà.
+    check_aes = aes_instance.aes_key_exist(name)
+    if check_aes:
+        return jsonify({'message': f"La Clé AES à utiliser avec '{name}' est déjà présente."}), 200
     else:
-        return jsonify({'message': "Une clé AES existe déjà sur le client."}), 200
+        new_key = aes_instance.generate_key()
+        aes_instance.insert_aes_key(new_key, name)
+        return jsonify({'message': f"La clé AES à utiliser avec '{name}' a été générée."}), 200
     
 #
 #   VERIFY
@@ -83,15 +98,26 @@ def checkRSAKey():
 
 @api_bp.route('/client/api/check-aes-key', methods=['GET'])
 def checkAESKey():
+    """
+        Cette route permet de vérifier la présence des clés AES à utiliser
+        avec les différentes entités [ca, vendeur].
+        
+        Returns:
+            json: response Bool
+    """
     if request.method != 'GET':
         return jsonify({"error": "Method Not Allowed"}), 405
     from app import aes_instance
     
-    check_aes = aes_instance.get_my_aes_key()
+    name = request.args.get('name')
+    if name not in ['ca', 'seller']:
+        return jsonify({'message': "ERROR: Unknown name identifier."}), 200
+    
+    check_aes = aes_instance.aes_key_exist(name)
     if check_aes:
-        return jsonify({'message': "Clé AES présente."}), 200
+        return jsonify({'message': f"La Clé AES à utiliser avec '{name}' est présente."}), 200
     else:
-        return jsonify({'message': "Aucune clé AES trouvée."}), 200
+        return jsonify({'message': f"Aucune clé AES trouvée pour le '{name}' domaine."}), 200
     
 #   END
 #   Opérations internes au client
@@ -165,8 +191,8 @@ def secretExchangeCa():
         demande sur la file MQTT.
         
         Le client a besoin d'avoir :
-            - De sa clé publique AES.
-            - De la clé publique de la CA.
+            - La clé AES utilisé pour les échanges avec la CA.
+            - La clé publique de la CA.
     """
     if request.method != 'GET':
         return jsonify({"error": "Method Not Allowed"}), 405
@@ -177,29 +203,30 @@ def secretExchangeCa():
     if caPubKey == None:
         return jsonify({'message': "ERROR SERVER: La clé publique de la CA est introuvable."}), 200
     
-    # Je récupère la clé AES du client depuis l'instance AES du client.
-    clientAesKey = aes_instance.get_my_aes_key()
-    if clientAesKey == None:
-        return jsonify({'message': "ERROR SERVER: La clé AES du client est introuvable."}), 200
+    # Je récupère la clé AES a utiliser pour la communication avec la CA depuis l'instance AES du client.
+    aesKey = aes_instance.get_aes_key("ca")
+    if aesKey == None:
+        return jsonify({'message': "ERROR SERVER: La clé AES utilise pour les échanges avec la CA est introuvable."}), 200
     
-    # Je crypte la clé AES du client par la clé publique de la CA en base64.
-    aes_cipher = rsa_instance.crypter(clientAesKey, caPubKey, True)
-    if aes_cipher == None:
+    # Je crypte la clé AES par la clé publique de la CA en base64.
+    aes_cipher_base64 = rsa_instance.crypter(aesKey, caPubKey, True)
+    if aes_cipher_base64 == None:
         return jsonify({'message': "ERROR SERVER: La clé AES du client n'a pas pu être chiffrée."}), 200
      
     # Je construis le message à publier sur la file MQTT.
     message = {
         'code' : 2,
-        'data' : aes_cipher
+        'data' : aes_cipher_base64
     }
-        
+    
+    print("\n\nAES SENDED: ", aesKey)
+    
     # Je publie le message.
     error = publish_message(os.getenv("TOPIC_PUBLISH_CA"), json.dumps(message))
     if error:
         return jsonify({'message': "ERROR SERVEUR: publication sur la file MQTT impossible."}), 200
     
     return jsonify({'message': "Le secret vient d'être publié sur la file MQTT."}), 200
-
 
 #   ====================
 #

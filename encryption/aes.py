@@ -9,6 +9,7 @@ from cryptography.hazmat.primitives import padding
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 class ChiffrementAES:
+    
     def __init__(self):
         """
             Initialise une nouvelle instance de la classe ChiffrementAES.
@@ -16,18 +17,13 @@ class ChiffrementAES:
             Cette classe utilise une clé AES de 256 bits par défaut. Les clés AES des autres entités sont stockées dans un dictionnaire de clés.
 
             Attributes:
-                key (bytes): La clé AES utilisée pour le chiffrement et le déchiffrement.
                 aes_keys (dict): Un dictionnaire pour stocker les clés AES associées à des identifiants.
         """
-        self.key = self.generate_key()
         self.aes_keys = {}
 
     def generate_key(self):
         """
-            Génère une clé AES de 256 bits aléatoire et la retourne.
-
-            Returns:
-                bytes: La clé AES de 256 bits générée aléatoirement.
+            Génère une clé AES de 256 bits aléatoire.
         """
         return os.urandom(32)
 
@@ -38,8 +34,22 @@ class ChiffrementAES:
             Args:
                 aes_key (bytes): La clé AES à insérer.
                 identifiant (str): L'identifiant associé à la clé.
+
+            Raises:
+                TypeError: Si aes_key n'est pas de type bytes ou identifiant n'est pas de type str.
         """
-        self.aes_keys[identifiant] = aes_key
+        # Vérifie que aes_key est bien de type bytes
+        if not isinstance(aes_key, bytes):
+            raise TypeError("La clé AES doit être de type bytes.")
+        
+        # Vérifie que identifiant est bien de type str
+        if not isinstance(identifiant, str):
+            raise TypeError("L'identifiant doit être de type str.")
+        
+        # Vérifie si l'identifiant existe pas déjà dans le dictionnaire
+        if identifiant not in self.aes_keys:
+            # Insère la clé AES dans le dictionnaire
+            self.aes_keys[identifiant] = aes_key
 
     def get_aes_key(self, identifiant: str) -> Union[bytes, None]:
         """
@@ -55,32 +65,57 @@ class ChiffrementAES:
         """
         return self.aes_keys.get(identifiant)
     
-    def get_my_aes_key(self) -> bytes:
+    def aes_key_exist(self, identifiant: str) -> bool:
         """
-            Retourne la clé AES de l'instance.
+            Cette méthode vérifie que une clé existe dans le dictionnaire.
+
+        Args:
+            identifiant (str): l'identifiant à chercher.
+
+        Returns:
+            bool: True or False
         """
-        return self.key
+        if self.aes_keys.get(identifiant):
+            return True
+        return False
     
-    def get_my_aes_key_serialized(self) -> Union[str, None]:
+    
+    def get_all_aes_keys(self) -> dict:
+        """
+            Retourne tout le dictionnaire des clés AES en format hexadécimal.
+            Destiné à être utiliser pour l'affichage.
+            
+            Returns:
+                dict: Le dictionnaire contenant toutes les clés AES en format hexadécimal.
+        """
+        return {identifiant: key.hex() for identifiant, key in self.aes_keys.items()}
+        
+    def get_aes_key_dict_serialized(self, identifiant: str) -> Union[str, None]:
         """
             Retourne la clé AES en format hexadécimal.
-
+            Utile pour de l'affichage ou de l'envoi.
+            
             Returns:
                 str: La clé AES en format hexadécimal.
                 ou
                 None: En cas d'erreur.
         """
         try:
-            serialized_key = self.key.hex()
+            aes_key = self.get_aes_key(identifiant)
+            if aes_key is not None:
+                serialized_key = aes_key.hex()
+                
             return serialized_key
         except TypeError as te:
-            print(f"Erreur lors de la sérialisation en hexadécimal de la clé AES :\n{te}")
+            print(f"Erreur lors de la sérialisation en hexadécimal de la clé AES (get_aes_key_dict_serialized) :\n{te}")
             return None
 
     def get_serialized_key(self, aes_key: bytes) -> Union[str, None]:
         """
             Retourne une clé AES au format hexadécimal.
-
+            
+            Args:
+                aes_key (bytes) : La clé AES au format bytes.
             Returns:
                 str: La clé AES à transformer en format hexadécimal.
                 ou
@@ -109,7 +144,7 @@ class ChiffrementAES:
             aes_key = bytes.fromhex(aes_key_hex)
             return aes_key
         except ValueError as ve:
-            print(f"Erreur lors de la conversion de la clé AES :\n{ve}")
+            print(f"Erreur lors de la conversion de la clé AES (convert_aes_key_from_hex_to_bytes) :\n{ve}")
             return None
             
     def pad_data(self, data: bytes) -> bytes:
@@ -140,63 +175,59 @@ class ChiffrementAES:
         unpadded_data = unpadder.update(data) + unpadder.finalize()
         return unpadded_data
 
-    def encrypt(self, data: bytes, key=None, use_base64=False) -> Union[bytes, str, None]:
+    def encrypt(self, data: bytes, aes_key: bytes, use_base64=False) -> Union[bytes, str, None]:
         """
             Chiffre les données avec AES-256 en mode CBC avec padding PKCS#7.
 
             Args:
                 data (bytes): Les données à chiffrer.
-                key (bytes, facultatif): La clé AES à utiliser pour le chiffrement. Si None, utilise la clé de l'instance.
-                use_base64 (bool, facultatif): Indique si les données chiffrées doivent être converties en base64. Par défaut, False.
+                aes_key (bytes): La clé AES à utiliser pour le chiffrement. Si None, utilise la clé de l'instance.
+                use_base64 (bool, facultatif): Indique si les données chiffrées doivent être converties en base64 en une chaîne de caractères Unicode. Par défaut, False.
 
             Returns:
                 bytes: Les données chiffrées, incluant l'IV au début. 
                 ou
-                str: Converties en base64 si use_base64=True 
+                str: Converti les données chiffrées en base64 en une chaîne de caractères Unicode si use_base64=True.
                 ou 
                 None: En cas d'erreur.
         """
         try:
-            if key is None:
-                key = self.key
             iv = os.urandom(16)
-            cipher = Cipher(algorithms.AES(key), modes.CBC(iv), backend=default_backend())
+            cipher = Cipher(algorithms.AES(aes_key), modes.CBC(iv), backend=default_backend())
             encryptor = cipher.encryptor()
             padded_data = self.pad_data(data)
             ciphertext = encryptor.update(padded_data) + encryptor.finalize()
             encrypted_data = iv + ciphertext
             if use_base64:
-                return base64.b64encode(encrypted_data)
+                return base64.b64encode(encrypted_data).decode('utf-8')
             else:
                 return encrypted_data
             
         except ValueError as ve:
-            print(f"Erreur de valeur lors du chiffrement :\n{ve}")
+            print(f"Erreur de valeur lors du chiffrement (encrypt) :\n{ve}")
             return None
         except Exception as e:
-            print(f"Erreur lors du chiffrement :\n{e}")
+            print(f"Erreur lors du chiffrement (encrypt) :\n{e}")
             return None
         
-    def decrypt(self, data, key=None, use_base64=False):
+    def decrypt(self, data, key: bytes, use_base64=False):
         """
             Déchiffre les données avec AES-256 en mode CBC, puis supprime le padding PKCS#7.
 
             Args:
-                data (bytes or str): Les données chiffrées, incluant l'IV au début. Si use_base64 est True, 
-                data doit être une chaîne de caractères (string) encodée en base64.
-                key (bytes, facultatif): La clé AES à utiliser pour le déchiffrement. Si None, utilise la clé de l'instance.
+                data (bytes or str): Les données chiffrées, incluant l'IV au début.
+                Si use_base64 est True, (data) doit être une chaîne de caractères (str) encodée en base64.
+                key (bytes): La clé AES à utiliser pour le déchiffrement.
                 use_base64 (bool, facultatif): Indique si les données chiffrées sont encodées en base64. Par défaut, False.
 
             Returns:
                 bytes: Les données déchiffrées.
         """
         try:
-            if key is None:
-                key = self.key
-                
             if use_base64:
+                # Si les données sont encodées en base64, les décoder en bytes
                 data = base64.b64decode(data)
-                
+            
             iv = data[:16]
             ciphertext = data[16:]
             cipher = Cipher(algorithms.AES(key), modes.CBC(iv), backend=default_backend())
@@ -206,48 +237,90 @@ class ChiffrementAES:
             
             return plaintext
         except TypeError as te:
-            print(f"TypeError lors du déchiffrement : {te}")
+            print(f"TypeError lors du déchiffrement (decrypt) :\n{te}")
             return None
         except ValueError as ve:
-            print(f"ValueError lors du déchiffrement : {ve}")
+            print(f"ValueError lors du déchiffrement (decrypt) :\n{ve}")
             return None
         except Exception as e:
-            print(f"Erreur lors du déchiffrement : {e}")
+            print(f"Erreur lors du déchiffrement (decrypt) :\n{e}")
             return None
 
 """
 Exemple d'utilisation :       
 """
 
+# # Exemple 1
+# message_a_chiffrer = b'BONJOUR A TOUS.'
+
 # # Création d'une instance de ChiffrementAES
 # aes = ChiffrementAES()
 
-# # Génération d'une clé AES à insérer
-# aes_key = aes.generate_key()
-# print("La clé aes généré : ", aes_key)
+# # Génération de deux clés AES.
+# aes_key_1 = aes.generate_key()
+
+# message_chiffre = aes.encrypt(message_a_chiffrer, aes_key_1, True)
+# message_dechifre = aes.decrypt(message_chiffre, aes_key_1, True)
+
+# if message_a_chiffrer == message_dechifre:
+#     print("ok")
+# else:
+#     print('KO')
+
+# Exemple 2
+# message_a_chiffrer = b'BONJOUR A TOUS.'
+
+# # Création d'une instance de ChiffrementAES
+# aes = ChiffrementAES()
+
+# # Génération de deux clés AES.
+# aes_key_1 = aes.generate_key()
+# aes_key_2 = aes.generate_key()
+
+# # Inserer la clé AES dans le dictionnaire des clés.
+# aes.insert_aes_key(aes_key_1, "aes_key_1")
+
+# # Afficher le dictionnaire
+# dict = aes.get_all_aes_keys()
+# print(dict)
+
+# Exemple 3
+
+# # Création d'une instance de ChiffrementAES
+# aes = ChiffrementAES()
+
+# # Génération d'une clé AES
+# aes.generate_key("my")
+
+# # Récupération de la clé AES
+# aes_key = aes.get_aes_key("my")
+# if aes_key is None:
+#     print("Erreur lors de la récuperation de la clé AES.")
+#     exit(-1)
+# print("La clé aes généré :\n", aes_key, "\n")
+
+# # Conversion de la clé AES en Hexa.
 # hex_aex_key = aes.get_serialized_key(aes_key)
-# print("La clé aes hexa : ", hex_aex_key)
+# print("La clé aes en hexa :\n", hex_aex_key, "\n")
+
 # return_to_aes_bytes_key = aes.convert_aes_key_from_hex_to_bytes(hex_aex_key)
+# if return_to_aes_bytes_key is None:
+#     print("Erreur les données cryptés ne sont pas en bytes.")
+#     exit(-1)
 # print("Retour à la clé d'origine : ", return_to_aes_bytes_key)
 
-# # Insertion de la clé AES associée à un identifiant
-# aes.insert_aes_key(aes_key, "identifiant_1")
-
-# # Chiffrement de données avec la clé de l'instance
+# # Chiffrement de données
 # data_to_encrypt = b"Hello, world!"
-# encrypted_data = aes.encrypt(data_to_encrypt)
-
-# # Déchiffrement des données avec la clé de l'instance
-# decrypted_data = aes.decrypt(encrypted_data)
+# encrypted_data = aes.encrypt(data_to_encrypt, return_to_aes_bytes_key)
+# if encrypted_data is None:
+#     print("Erreur les données cryptés ne sont pas en bytes.")
+#     exit(-1)
+    
+# # Déchiffrement des données
+# decrypted_data = aes.decrypt(encrypted_data, return_to_aes_bytes_key)
 
 # # Vérification des données déchiffrées
 # if decrypted_data == data_to_encrypt:
 #     print("Les données ont été déchiffrées avec succès !")
 # else:
 #     print("Erreur lors du déchiffrement.")
-
-# # Conversion de la clé AES en format hexadécimal
-# aes_key_hex = aes.get_my_aes_key_serialized()
-
-# # Insertion de la clé AES à partir de sa représentation hexadécimale
-# aes.convert_aes_key_from_hex_to_bytes(aes_key_hex)
