@@ -12,6 +12,9 @@ ou
 pip3 install -r requirements.txt
 ```
 
+# Configurer les .env
+Vous devez configurer les fichiers ".env" de chaque serveur. Le port MQTT est indiqué en dur dans les fichiers app.py de chaque serveur.
+
 # Choix du lancement
 
 ## Lancer chaque serveur manuellement
