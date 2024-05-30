@@ -7,19 +7,51 @@ Projet universitaire RT0802 échanges sécurisés et PKI
 ```bash
 pip install -r requirements.txt
 ```
+ou 
+```bash
+pip3 install -r requirements.txt
+```
 
 # Choix du lancement
+
+## Lancer chaque serveur manuellement
+Vous pouvez également lancer chaque serveur de manière individuelle en vous positionnant au niveau du script "app.py" de chaque serveur avec la commande :
+
+/ca/ :
+```bash
+python app.py
+```
+OU 
+```bash
+python3 app.py
+```
+
+/client/ :
+```bash
+python app.py
+```
+OU 
+```bash
+python3 app.py
+```
+
+/vendeur/ :
+```bash
+python app.py
+```
+OU 
+```bash
+python3 app.py
+```
 
 ## launcher.py
 Un script nommé launcher.py se trouve à la racine du projet. Il utilise des threads pour lancer le projet dans un seul terminal. Un affichage des logs est mis en place de manière dynamique. Attention, pour arrêter les threads, il faudra fermer le terminal.
 ```bash
-launcher.py
+python launcher.py
 ```
-
-## Lancer chaque serveur manuellement
-Vous pouvez également lancer chaque serveur de manière individuelle en vous positionnant au niveau du script "app.py" de chaque serveur avec la commande :
+ou 
 ```bash
-python app.py
+python3 launcher.py
 ```
 
 ## Lancement de l'interface web Vue.js

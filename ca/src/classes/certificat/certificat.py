@@ -296,7 +296,6 @@ class Certificat:
         """
         for cert_info in self.crl:
             if int(cert_info["serial_number"]) == int(serial_number):
-                print(f"CORRESPONDANCE {cert_info["serial_number"]} avec {serial_number}")
                 return True  # Le certificat est révoqué
         
         return False
