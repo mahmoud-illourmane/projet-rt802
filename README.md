@@ -15,7 +15,7 @@ pip3 install -r requirements.txt
 # Choix du lancement
 
 ## Lancer chaque serveur manuellement
-Vous pouvez également lancer chaque serveur de manière individuelle en vous positionnant au niveau du script "app.py" de chaque serveur avec la commande :
+Vous pouvez lancer chaque serveur de manière individuelle en vous positionnant au niveau du script "app.py" de chaque serveur avec la commande :
 
 /ca/ :
 ```bash
