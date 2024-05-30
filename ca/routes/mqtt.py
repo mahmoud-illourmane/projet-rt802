@@ -3,7 +3,7 @@ from flask_mqtt import Mqtt
 from flask import Blueprint
 from cryptography.hazmat.primitives.asymmetric.rsa import RSAPublicKey
 
-import os, json
+import os, json, struct
 
 mqtt_bp = Blueprint('mqtt', __name__)
 
@@ -40,7 +40,7 @@ def on_mqtt_message(client, userdata, message):
         Logique à exécuter lorsqu'un message est reçu.
     """
     from src.tools.tools import receive_exchange_secret, decrypt_data_request_certificat
-    from app import rsa_instance, aes_instance 
+    from app import rsa_instance, aes_instance, certificat_instance
     
     payload = message.payload.decode()
     
@@ -94,6 +94,34 @@ def on_mqtt_message(client, userdata, message):
                 # receive_exchange_secret(rsa_instance, aes_instance, aes_key_encrypted_by_rsa_base64, "client") 
                 print("\nTOPIC VENDEUR : SECRET RECU.")
             
+            elif code == 3: # Vérification d'un certificat pour le client
+                print(f"TOPIC CLIENT CODE 3 : Je reçois une demande de vérification de certificat.")
+                cert_encrypted = message_data['data']
+                
+                # Décryptage du certificat
+                aesKeyClient = aes_instance.get_aes_key("client")
+                if aesKeyClient is None:
+                    print("ERREUR TOPIC CLIENT CODE 3 : La clé aes de communication avec le client introuvable.")
+                    return None
+                cert_decrypted = aes_instance.decrypt(cert_encrypted, aesKeyClient, True)
+                if cert_decrypted is None:
+                    return None
+                
+                serial_number = certificat_instance.get_serial_number_certificat(cert_decrypted)
+                if serial_number is None:
+                    return None
+                
+                result = certificat_instance.check_revoked_cert(serial_number)
+                byte_result = struct.pack('?', result)
+                
+                result_encrypted = aes_instance.encrypt(byte_result, aesKeyClient, True)
+                message = {
+                    'code': 2,
+                    'data': result_encrypted 
+                }
+                
+                publish_message(os.getenv("TOPIC_PUBLISH_CLIENT"), json.dumps(message))
+                print(f"TOPIC CLIENT CODE 3 : Demande traitée.")
             else:
                 # Code inconnu
                 print("Code inconnu")
@@ -227,7 +255,7 @@ def publish_message(topic, payload):
         print("ERROR PUBLISH:\n", e)
         return e
 
-# Enregistrez les routes MQTT sur le blueprint mqtt_bp
+# Route de test non utilisée
 @mqtt_bp.route('/mqtt/test', methods=['GET'])
 def mqtt_test():
     return 'Test MQTT', 200

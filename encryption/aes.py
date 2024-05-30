@@ -79,7 +79,6 @@ class ChiffrementAES:
             return True
         return False
     
-    
     def get_all_aes_keys(self) -> dict:
         """
             Retourne tout le dictionnaire des clés AES en format hexadécimal.
@@ -222,6 +221,8 @@ class ChiffrementAES:
 
             Returns:
                 bytes: Les données déchiffrées.
+                or 
+                None: En cas d'erreur
         """
         try:
             if use_base64:

@@ -1,7 +1,7 @@
 from flask import current_app
 from flask_mqtt import Mqtt
 from flask import Blueprint
-import os, json
+import os, json, struct
 
 mqtt_bp = Blueprint('mqtt', __name__)
 
@@ -46,7 +46,7 @@ def on_mqtt_message(client, userdata, message):
     # MESSAGE DE LA PART DE LA CA
     if message.topic == str(os.getenv("TOPIC_SUB_CA")):
         if 'code' in message_data:
-            from app import rsa_instance
+            from app import rsa_instance, aes_instance, certificat_instance
             
             code = message_data['code']
             if code == 1: # Réception de la clé publique de la CA
@@ -57,8 +57,22 @@ def on_mqtt_message(client, userdata, message):
                 else:
                     print("Erreur lors de la désérialisation de la clé publique.")
                     
-            elif code == 2: # Réception autre  
-                print("TODO")
+            elif code == 2: # Réception d'une réponse pour indiquer si un certificat a été révoqué
+                print("TOPIC CA CODE 2 : RECEPTION D'UNE REPONSE DE CERTIFICAT REVOQUE OU NON.")
+                encrypted_result = message_data['data']
+                
+                aesKeyCa = aes_instance.get_aes_key("ca")
+                if aesKeyCa is None:
+                    print("TOPIC CA CODE 2 : Clé aes de communication avec la CA introuvable.")
+                    return None
+                byte_result = aes_instance.decrypt(encrypted_result, aesKeyCa, True)
+                if byte_result is None:
+                    return None
+                bool_result =  struct.unpack('?', byte_result)[0]
+                
+                certificat_instance.setResponseCa(bool_result)
+                print("\n\n\nCERTIFICAT REVOQUE ? ", bool_result)
+                
             else:
                 # Code inconnu
                 print("Code inconnu")

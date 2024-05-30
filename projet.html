@@ -112,13 +112,16 @@
                             <!-- Liste des clé AES -->
                             <div class="operation-btn mb-2 bg_2">
                                 <label for="getSellerCertificate" class="form-label">Effectuer un achat</label>
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" v-model="switcherCallCa" type="checkbox" role="switch" id="switcherUseCaVerification">
+                                    <label class="form-check-label" for="switcherUseCaVerification">Vérifier la révocation en contactant la CA</label>
+                                </div>
                                 <button @click="getSellerCertificate" class="btn btn-sm btn-success">Obtenir et vérifier le certificat</button>
-                                
                             </div> <!-- Liste des clé AES -->
                         </div>
                     </div>
 
-                    <div class="client-print print">
+                    <div class="client-print print bg_3 p-2">
                         <h6 class="c_1">Sortie</h6> 
                         <a @click="cleanPrintClient" class="material-icons c_2 cleaner_icon">cleaning_services</a>
                         <div class="print-final">
@@ -281,7 +284,7 @@
                         </div>
                     </div> <!-- operations -->
 
-                    <div class="vendeur-print print">
+                    <div class="vendeur-print print bg_3 p-2">
                         <h6 class="c_1">Sortie</h6>
                         <a @click="cleanPrintVendeur" class="material-icons c_2 cleaner_icon">cleaning_services</a>
                         <div class="print-final">
@@ -331,7 +334,7 @@
                     </div> <!-- Liste des clé AES -->
                 </div>
 
-                <div class="ca-print print">
+                <div class="ca-print print bg_3 p-2">
                     <h6 class="c_1">Sortie</h6>
                     <a @click="cleanPrintCa" class="material-icons c_2 cleaner_icon">cleaning_services</a>
                     <div class="print-final">
@@ -949,6 +952,8 @@
                 // Liste des clé AES à disposition
                 let aesKeys = ref([]);
 
+                let switcherCallCa = ref(false);
+
                 /*==== FONCTIONS ====*/
                     /*== TOOLS ==*/
                         function cleanPrintClient() {
@@ -960,6 +965,11 @@
                             clearPrintTimer = setTimeout(cleanPrintClient, 10000);
                         }
                         
+                        // Détermine si le client envoi le certificat à la CA pour vérifier si il est révoqué ou non
+                        watch(switcherCallCa, (newValue) => {
+                            console.log('Switcher state changed: ', switcherCallCa.value);
+                        });
+
                         watch(printClient, () => {
                             autoClearPrintClient();
                         });
@@ -1042,8 +1052,9 @@
                         }
 
                         async function getSellerCertificate() {
+
                             try {
-                                const result = await a_getSellerCertificate();
+                                const result = await a_getSellerCertificate(switcherCallCa);
                                 printClient.value = result;
                             } catch (error) {
                                 console.error('Erreur :', error);
@@ -1176,16 +1187,36 @@
                         /*
                         *   Retourne la liste de toutes les clé aes dont dispose la CA.
                         */
-                        async function a_getSellerCertificate() {
+                        async function a_getSellerCertificate(switcherCallCa) {
+                            
                             try {
                                 const response = await axios.get('http://127.0.0.1:5001/client/api/get-seller-certificate');
                                 const statusCode = response.status;
 
                                 if(statusCode == 200) {
-                                    const response2 = await axios.get('http://127.0.0.1:5001/client/api/verify-seller-certificate');
-                                    const statusCode2 = response.status;
 
-                                    return response2.data.message;
+                                    // Vérification en local
+                                    if (switcherCallCa.value == false) {
+                                        const response = await axios.get('http://127.0.0.1:5001/client/api/verify-seller-certificate');
+                                        const statusCode = response.status;
+                                        return response.data.message;
+                                    }
+                                    // Vérification en contactant la CA
+                                    else {
+                                        const responseVerifCertificat = await axios.get('http://127.0.0.1:5001/client/api/verify-seller-certificate/with-ca');
+                                        const statusCodeVerifCertificat = responseVerifCertificat.status;
+                                        // Une autre requête pour afficher le résultat
+                                        if(statusCodeVerifCertificat == 200) {
+                                            const responsePrintResponseCa = await axios.get('http://127.0.0.1:5001/client/api/print-response-ca');
+                                            const statusCodeVerifCertificat = responsePrintResponseCa.status;
+                                            return responsePrintResponseCa.data.message;
+                                        }else {
+                                            printClient.value = "ERROR: Erreur lors de la requête API (verify-seller-certificate/with-ca)";
+                                            console.log('CLIENT : Erreur lors de la requête API (verify-seller-certificate/with-ca)');
+                                            return -1;
+                                        }
+                                    }
+                                    
                                 } else {
                                     printClient.value = "ERROR: Erreur lors de la requête API (a_getSellerCertificate)";
                                     console.log('CLIENT : Erreur lors de la requête API (a_getSellerCertificate)');
@@ -1194,6 +1225,8 @@
                             } catch (err) {
                                 printClient.value = "ERROR: " + err.message;
                                 console.log('CLIENT : Erreur lors de la requête API (a_getSellerCertificate) : ', err.message);
+                            } finally {
+                                switcherCallCa.value = false;
                             }
                         }
                     
@@ -1371,6 +1404,7 @@
                     selectedPubKeyReq,
                     printClient,
                     aesKeys,
+                    switcherCallCa,
 
                     // Outils
                     cleanPrintClient,

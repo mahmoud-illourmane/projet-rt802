@@ -292,7 +292,7 @@ def getSellerCertificate():
 @api_bp.route('/client/api/verify-seller-certificate', methods=['GET'])
 async def verifySellerCertificate():
     """
-        Cette route demande le certificat d'un vendeur.
+        Cette route demande le certificat d'un vendeur en local.
     """
     if request.method != 'GET':
         return jsonify({"error": "Method Not Allowed"}), 405
@@ -322,7 +322,63 @@ async def verifySellerCertificate():
         result = "invalide"
         
     return jsonify({'message': f"Le certificat est {result}"}), 200
+
+@api_bp.route('/client/api/verify-seller-certificate/with-ca', methods=['GET'])
+def verifySellerCertificateWithCaSend():
+    """
+        Cette route demande le certificat d'un vendeur en demandant à la CA 
+        s'il est révoqué.
+    """
+    if request.method != 'GET':
+        return jsonify({"error": "Method Not Allowed"}), 405
+    from app import aes_instance, certificat_instance
     
+    cert = certificat_instance.get_certificate()
+    if cert is None:
+        return jsonify({'message': "Aucun certificat n'est disponible pour la vérification."}), 200
+    
+    aesKey = aes_instance.get_aes_key("ca")
+    if aesKey is None:
+        return jsonify({'message': "Il manque la clé AES de communication avec la CA."}), 200
+    
+    # Cryptage du certificat
+    cert_encrypted = aes_instance.encrypt(cert, aesKey, True)
+    if cert_encrypted is None:
+        return jsonify({'message': "Erreur lors de la tentative de cryptage du certificat du vendeur."}), 200
+    
+    message = {
+        'code' : 3,
+        'data' : cert_encrypted
+    }
+    
+    error = publish_message(os.getenv("TOPIC_PUBLISH_CA"), json.dumps(message))
+    if error == -1:
+        print("Error publish to topic ca.")
+        return jsonify({'message': "Error publish to topic ca."}), 200
+    print("TOPIC CA : Le certificat du vendeur a été publié sur la file MQTT.")
+    
+    return jsonify({'message': "ok"}), 200
+
+@api_bp.route('/client/api/print-response-ca', methods=['GET'])
+async def printResponseCa():
+    """
+        Cette route sert à afficher le résultat de la demande
+        de vérification de révocation demandé à la CA.
+    """
+    if request.method != 'GET':
+        return jsonify({"error": "Method Not Allowed"}), 405
+    from app import certificat_instance
+    
+    await asyncio.sleep(1)
+    
+    result = certificat_instance.getResponseCa()
+    if result:
+        res = "Certificat Révoqué"
+    else:
+        res = "Certificat non révoqué"
+    return jsonify({'message': f"{res}"}), 200
+
+
 @api_bp.route('/client/api/secret-exchange-seller', methods=['GET'])
 def secretExchangeSeller():
     """

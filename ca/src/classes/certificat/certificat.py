@@ -17,6 +17,33 @@ from cryptography.x509 import load_pem_x509_certificate
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 class Certificat:
+    """
+        Classe permettant de gérer des certificats X.509, y compris la génération de certificats
+        autosignés, la création de certificats signés par une autorité de certification (CA),
+        la révocation de certificats, et plus encore.
+
+        Attributs:
+            rsa_instance (RSAInstance): Instance de RSA pour gérer les clés publiques et privées.
+            cle_privee (RSAPrivateKey): Clé privée de l'instance RSA.
+            cle_publique (RSAPublicKey): Clé publique de l'instance RSA.
+            my_certificat (bytes): Certificat autosigné de la CA au format PEM.
+            crl (list): Liste de révocation des certificats.
+            country_name (str): Nom du pays pour le certificat.
+            state_or_province_name (str): Nom de l'état ou de la province pour le certificat.
+            locality_name (str): Nom de la localité pour le certificat.
+            organization_name (str): Nom de l'organisation pour le certificat.
+            common_name (str): Nom commun pour le certificat.
+            
+        Methods:
+            check_my_certificat : Vérifie que la CA a son certificat autosigné.
+            get_my_certificat : Retourne le certificat de la CA (bytes).
+            get_crl : Retourne la liste de la CRL.
+            generer_certificat_autosigne : Génère un certificat autosigné x509.
+            creer_certificat_signe_par_ca : Génère un certificat avec les données envoyées par le vendeur.
+            revoquer_certificat : Révoque un certificat et l'ajoute à la CRL.
+            check_revoked_cert : Vérifie si un certificat est révoqué.
+    """
+    
     def __init__(self):
         from app import rsa_instance
         
@@ -25,7 +52,7 @@ class Certificat:
         self.cle_publique = self.rsa_instance.get_my_pub_key()
         
         self.my_certificat = None
-        self.crl = {}
+        self.crl = []
         
         self.country_name = "FR"
         self.state_or_province_name = "Marne"
@@ -211,7 +238,7 @@ class Certificat:
             return None
         return cert_str
     
-    def get_serial_number_certificat(self, certificat: bytes) -> int:
+    def get_serial_number_certificat(self, certificat: bytes) -> Union[int, None]:
         """
             Cette méthode retourne le serial_number d'un certificat.
             
@@ -220,9 +247,15 @@ class Certificat:
             
             Returns:
                 serial_number (int): Le numéro de série.
+                or
+                None: En cas d'erreur.
         """
-        cert = load_pem_x509_certificate(certificat, default_backend())
-        return cert.serial_number
+        try:
+            cert = load_pem_x509_certificate(certificat, default_backend())
+            return cert.serial_number
+        except Exception as e:
+            print("Erreur lors de la récupration du numéro de serie du certificat.")
+            return None
     
     def revoquer_certificat(self, certificat: bytes) -> bool:
         """
@@ -243,13 +276,30 @@ class Certificat:
             print("ERREUR : Erreur lors de la tentative de révocation.")
             return False
         
-        self.crl = {
+        new_ = {
             "serial_number": serial_number,
             "date_revoque": date_revoque
         }
-
+        self.crl.append(new_)
+        
         print(f"Certificat révoqué avec succès : {serial_number}")
         return True
+    
+    def check_revoked_cert(self, serial_number) -> bool:
+        """
+            Cette méthode vérifie si un certificat ce trouve dans la CRL.
+            Args:
+                serial_number (int): le numéro de serie du certificat
+
+            Returns:
+                bool: True | False
+        """
+        for cert_info in self.crl:
+            if int(cert_info["serial_number"]) == int(serial_number):
+                print(f"CORRESPONDANCE {cert_info["serial_number"]} avec {serial_number}")
+                return True  # Le certificat est révoqué
+        
+        return False
 
 # # Créer une instance de la classe Certificat
 # certificat = Certificat()

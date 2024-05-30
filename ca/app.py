@@ -55,7 +55,7 @@ certificat_instance = Certificat()
 |
 """
 
-# Configurer MQTT avec l'application Flask
+# Configure MQTT avec l'application Flask
 configure_mqtt(app)
 
 if __name__ == '__main__':

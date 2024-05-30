@@ -13,8 +13,31 @@ class Certificat:
             pouvoir afficher le résultat de la vérification du certificat coté Vue.js
             
             certificat (bytes): le certificat à stocker.
+            response_ca (bool) = cet attribut me sert pour stocker la réponse de la CA lorsque un client lui demande si un certificat est révoqué. 
         """
         self.cert = None
+        self.response_ca = None
+    
+    def getResponseCa(self) -> Union[bool, None]:
+        """
+            Retourne la valeur de self.response_ca
+            Returns:
+                bool: True | False
+                or
+                None: Valeur d'origine.
+        """
+        
+        return self.response_ca
+    
+    def setResponseCa(self, value: bool): 
+        """
+            Cette méthode permet d'insérer la réponse reçu de la part de la CA.
+
+        Args:
+            value (bool): True | False
+        """
+        if isinstance(value, bool):
+            self.response_ca = value
     
     def insert_certificat(self, cert_: bytes) -> bool:
         """

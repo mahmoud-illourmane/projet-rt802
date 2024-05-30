@@ -3,6 +3,17 @@ import threading
 import os
 import sys
 
+"""
+    CE SCRIPT PERMET D'EXECUTER LE PROJET DANS UN SEUL TERMINAL EN UTILISANT 3 THREADS.
+    APRES AVOIR LANCER CE SCRIPT, OUVREZ LE FICHIER HTML "projet.html"
+    
+    LORS DE L'ARRET DE CE SCRIPT VOUS DEVEZ FERMER LE TERMINAL SUR LEQUEL LE SCRIPT A ETE LANCE
+    CAR LES THREADS NE S'ARRETE PAS.
+    
+    AUTHOR: MAHMOUD ILLOURMANE
+    VERSION: 0.9 
+"""
+
 # Drapeau pour indiquer aux threads de s'arrêter
 exit_flag = threading.Event()
 
@@ -16,9 +27,9 @@ def launch_server(command, working_directory, log_file):
         if process.poll() is not None:  # Vérifie si le processus est terminé
             break
         else:
-            exit_flag.wait(timeout=1)  # Attendez 1 seconde avant de vérifier à nouveau
+            exit_flag.wait(timeout=1)  # Attend 1 seconde avant de vérifier à nouveau
 
-    # Arrêtez le processus si ce n'est pas déjà fait
+    # Arrête le processus si ce n'est pas déjà fait
     if process.poll() is None:
         process.terminate()
 
@@ -66,7 +77,8 @@ while True:
     elif choice == '3':
         display_logs(os.path.join(project_dir, 'client', 'client.log'))
     elif choice == '4':
-        print("Arrêt du programme.")
+        print("Pour arrêter les threads vous devez fermer votre terminal actuel.")
+        # Ne s'arrête pas sauf si je ferme le terminal.
         # Indiquer aux threads de s'arrêter
         exit_flag.set()
         # Attendre que tous les threads se terminent

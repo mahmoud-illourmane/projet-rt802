@@ -185,7 +185,7 @@ def publish_message(topic, payload):
         print(f"ERROR PUBLISH:\n {e}")
         return f"Failed to publish message: {e}"
 
-# Enregistrez les routes MQTT sur le blueprint mqtt_bp
+# Route de test non utilisée
 @mqtt_bp.route('/mqtt/test', methods=['GET'])
 def mqtt_test():
     return 'Test MQTT', 200
