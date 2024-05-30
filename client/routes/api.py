@@ -4,6 +4,8 @@ from flask import Blueprint
 import sys, os, json
 import asyncio
 
+from cryptography.hazmat.primitives.asymmetric.rsa import RSAPublicKey
+
 api_bp = Blueprint('api', __name__)
 
 # Ajoute le chemin du dossier parent à sys.path
@@ -179,6 +181,23 @@ async def printPubKeyCa():
     }
     return jsonify({'message': message}), 200
 
+@api_bp.route('/client/api/get-all-aes-key', methods=['GET'])
+def getAllAesKeys():
+    """
+        Cette route permet de retourner toutes les clé
+        AES que le vendeur dispose.
+    """
+    if request.method != 'GET':
+        return jsonify({"error": "Method Not Allowed"}), 405
+    from app import aes_instance
+    
+    aes_keys_dic = aes_instance.get_all_aes_keys()
+    print("TOUTES LES CLE AES:\n",aes_keys_dic)
+    response = {'aes_keys_dic': aes_keys_dic}
+    
+    return jsonify(response), 200
+
+
 #
 #   SECRET EXCHANGE CA
 #
@@ -237,6 +256,117 @@ def secretExchangeCa():
 #
 #   GET PUB KET SELLER
 #
+
+@api_bp.route('/client/api/get-seller-certificate', methods=['GET'])
+def getSellerCertificate():
+    """
+        Cette route demande le certificat d'un vendeur.
+    """
+    if request.method != 'GET':
+        return jsonify({"error": "Method Not Allowed"}), 405
+    from app import aes_instance, rsa_instance
+    
+    # Vérifications des clés
+    
+    caPubKey = rsa_instance.get_pub_key("ca", True) # Disponibilité de la clé publique de la CA.
+    if caPubKey is None:
+        return jsonify({'message': 'ERREUR : La clé publique de la CA est introuvable.'}), 200
+    
+    sellerAesKey = aes_instance.get_aes_key("seller") # Disponibilité de la clé aes de communication avec le vendeur.
+    if sellerAesKey is None:
+        return jsonify({'message': 'ERREUR : La clé AES utilisé avec le vendeur est introuvable.'}), 200
+    
+    # Donnée à envoyer
+    message = {
+        'code' : 4,
+        'data' : None
+    }
+    
+    error = publish_message(os.getenv("TOPIC_PUBLISH_SELLER"), json.dumps(message))
+    if error == -1:
+        print("Error publish to topic seller.")
+        return jsonify({'message': "Error publish to topic seller (getSellerCertificate)."}), 200
+    
+    return jsonify({'message': 'ok.'}), 200
+
+@api_bp.route('/client/api/verify-seller-certificate', methods=['GET'])
+async def verifySellerCertificate():
+    """
+        Cette route demande le certificat d'un vendeur.
+    """
+    if request.method != 'GET':
+        return jsonify({"error": "Method Not Allowed"}), 405
+    from app import rsa_instance, certificat_instance
+    
+    await asyncio.sleep(1)
+    
+    cert = certificat_instance.get_certificate()
+    if cert is None:
+        return jsonify({'message': "Aucun certificat n'est disponible pour la vérification."}), 200
+    print("LE CERTIFICAT:\n", cert)
+    
+    pubKey = rsa_instance.get_pub_key("ca")
+    if not isinstance(pubKey, RSAPublicKey):
+        return jsonify({'message': 'Erreur La clé de la CA introuvable.'}), 200
+    print("PUBKEY\n", pubKey)
+    
+    try:
+        verification = certificat_instance.verify_certificat(cert, pubKey)
+    except Exception as e:
+        print(f"Erreur lors de la vérification du certificat : {e}")
+        return jsonify({'message': f'Erreur lors de la vérification du certificat : {e}'}), 200
+    
+    if verification == True:
+        result = "valide"
+    else:
+        result = "invalide"
+        
+    return jsonify({'message': f"Le certificat est {result}"}), 200
+    
+@api_bp.route('/client/api/secret-exchange-seller', methods=['GET'])
+def secretExchangeSeller():
+    """
+        Cette route, permet d'entamer le processus d'échange
+        de secret entre le client et le vendeur. Il publie la 
+        demande sur la file MQTT.
+        
+        Le client a besoin d'avoir :
+            - La clé AES utilisé pour les échanges avec la CA.
+            - La clé publique de la CA.
+    """
+    if request.method != 'GET':
+        return jsonify({"error": "Method Not Allowed"}), 405
+    from app import rsa_instance, aes_instance
+
+    # Je récupère la clé publique de la CA depuis l'instance RSA du client.
+    caPubKey = rsa_instance.get_pub_key("seller")
+    if caPubKey == None:
+        return jsonify({'message': "ERROR SERVER: La clé publique du vendeur est introuvable."}), 200
+    
+    # Je récupère la clé AES a utiliser pour la communication avec la CA depuis l'instance AES du client.
+    aesKey = aes_instance.get_aes_key("seller")
+    if aesKey == None:
+        return jsonify({'message': "ERROR SERVER: La clé AES utilisé pour les échanges avec le vendeur est introuvable."}), 200
+    
+    # Je crypte la clé AES par la clé publique de la CA en base64.
+    aes_cipher_base64 = rsa_instance.crypter(aesKey, caPubKey, True)
+    if aes_cipher_base64 == None:
+        return jsonify({'message': "ERROR SERVER: La clé AES du client n'a pas pu être chiffrée."}), 200
+     
+    # Je construis le message à publier sur la file MQTT.
+    message = {
+        'code' : 3,
+        'data' : aes_cipher_base64
+    }
+    
+    print("\n\nAES SENDED: ", aesKey)
+    
+    # Je publie le message.
+    error = publish_message(os.getenv("TOPIC_PUBLISH_SELLER"), json.dumps(message))
+    if error:
+        return jsonify({'message': "ERROR SERVEUR: publication sur la file MQTT impossible."}), 200
+    
+    return jsonify({'message': "Le secret entre client/vendeur vient d'être publié sur la file MQTT."}), 200
 
 @api_bp.route('/client/api/get-pub-key-seller', methods=['GET'])
 def getPubKeySeller():

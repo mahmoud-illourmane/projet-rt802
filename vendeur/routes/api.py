@@ -120,6 +120,62 @@ def checkAESKey():
     else:
         return jsonify({'message': f"Aucune clé AES n'a été trouvée pour le domaine '{name}'."}), 200
 
+#   END
+#   VERIFY INTERNAL KEYS
+#
+
+@api_bp.route('/seller/api/get-all-aes-key', methods=['GET'])
+def getAllAesKeys():
+    """
+        Cette route permet de retourner toutes les clé
+        AES que le vendeur dispose.
+    """
+    if request.method != 'GET':
+        return jsonify({"error": "Method Not Allowed"}), 405
+    from app import aes_instance
+    
+    aes_keys_dic = aes_instance.get_all_aes_keys()
+    print("TOUTES LES CLE AES:\n",aes_keys_dic)
+    response = {'aes_keys_dic': aes_keys_dic}
+    
+    return jsonify(response), 200
+
+@api_bp.route('/seller/api/get-all-certificates', methods=['GET'])
+def getAllCertificates():
+    """
+        Cette route permet de retourner tous les certificats
+        dont dispose le vendeur.
+    """
+    if request.method != 'GET':
+        return jsonify({"error": "Method Not Allowed"}), 405
+    from app import certificat_instance
+    
+    certificates_dic = certificat_instance.get_all_certificates()
+    print("TOUS LES CERTIFICATS :\n",certificates_dic)
+    response = {'certificates_dic': certificates_dic}
+    
+    return jsonify(response), 200
+
+@api_bp.route('/seller/api/update-certificat-sender', methods=['PUT'])
+def updateCertificatSender():
+    """
+        Cette route permet de modifier le certificat à envoyer par défaut
+        au vendeur.
+    """
+    if request.method != 'PUT':
+        return jsonify({"error": "Method Not Allowed"}), 405
+    from app import certificat_instance
+
+    data = request.get_json()
+    cert_id = data.get('certId')
+    print("Le certificat par défaut devient: ", data.get('certId'))
+
+    defined = certificat_instance.define_cert_to_send(cert_id)
+    if defined == False:
+        return jsonify({'message': "Une erreur s'est produite lors de la définition."}), 200
+    
+    return jsonify({'message': f"Le certificat '{cert_id}' a bien été défini comme certificat par défaut."}), 200
+
 #   START
 #   Opérations externes au vendeur
 #

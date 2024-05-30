@@ -52,6 +52,15 @@ class Certificat:
         """
         return self.my_certificat
     
+    def get_crl(self):
+        """
+            Retourne la CRL.    
+
+        Returns:
+            dict: Le dictionnaire
+        """
+        return self.crl
+    
     def generer_certificat_autosigne(self, duree_validite_annees=1):
         """
             Génère un certificat x509 autosigné.
@@ -100,19 +109,21 @@ class Certificat:
         self.my_certificat = cert_pem
         return cert_pem
     
-    def creer_certificat_signe_par_ca(self, cle_privee_ca, cle_publique_client, data_user_json, duree_validite_annees=1) -> Union[bytes, None]:
+    def creer_certificat_signe_par_ca(self, cle_privee_ca, cle_publique_client: RSAPublicKey, data_user_json: dict, duree_validite_annees=1, expired=False) -> Union[bytes, None]:
         """
-            Crée un certificat X.509 signé par l'autorité de certification (CA).
+        Crée un certificat X.509 signé par l'autorité de certification (CA).
 
-            Args:
-                cle_privee_ca (RSAPrivateKey): Clé privée de l'autorité de certification utilisée pour signer le certificat.
-                cle_publique_client (RSAPublicKey): Clé publique du client pour laquelle le certificat est créé.
-                duree_validite_annees (int): Durée de validité du certificat en années (par défaut 1).
+        Args:
+            cle_privee_ca (RSAPrivateKey): Clé privée de l'autorité de certification utilisée pour signer le certificat.
+            cle_publique_client (RSAPublicKey): Clé publique du client pour laquelle le certificat est créé.
+            data_user_json (dict): Données de l'utilisateur pour le certificat.
+            duree_validite_annees (int): Durée de validité du certificat en années (par défaut 1).
+            expired (bool): Indique si le certificat doit être créé comme expiré.
 
-            Returns:
-                bytes: Le certificat généré au format PEM.
-                ou
-                None: En cas d'erreur
+        Returns:
+            bytes: Le certificat généré au format PEM.
+            ou
+            None: En cas d'erreur
         """
         try:
             if not isinstance(cle_publique_client, RSAPublicKey):
@@ -128,25 +139,32 @@ class Certificat:
                 x509.NameAttribute(NameOID.COMMON_NAME, data_user_json['common_name']),
             ])
 
+            # Définir le nom de l'émetteur (l'autorité de certification)
+            emetteur_nom = x509.Name([
+                x509.NameAttribute(NameOID.COUNTRY_NAME, self.country_name),
+                x509.NameAttribute(NameOID.STATE_OR_PROVINCE_NAME, self.state_or_province_name),
+                x509.NameAttribute(NameOID.LOCALITY_NAME, self.locality_name),
+                x509.NameAttribute(NameOID.ORGANIZATION_NAME, self.organization_name),
+                x509.NameAttribute(NameOID.COMMON_NAME, self.common_name),
+            ])
+
+            # Calculer les dates de validité
+            not_valid_before = datetime.now(timezone.utc) if not expired else datetime.now(timezone.utc) - timedelta(days=1)
+            not_valid_after = datetime.now(timezone.utc) + timedelta(days=duree_validite_annees * 365) if not expired else datetime.now(timezone.utc) - timedelta(days=1)
+
             # Construire le certificat
             cert = x509.CertificateBuilder().subject_name(
                 sujet_nom
             ).issuer_name(
-                x509.Name([
-                    x509.NameAttribute(NameOID.COUNTRY_NAME, self.country_name),
-                    x509.NameAttribute(NameOID.STATE_OR_PROVINCE_NAME, self.state_or_province_name),
-                    x509.NameAttribute(NameOID.LOCALITY_NAME, self.locality_name),
-                    x509.NameAttribute(NameOID.ORGANIZATION_NAME, self.organization_name),
-                    x509.NameAttribute(NameOID.COMMON_NAME, self.common_name),
-                ])
+                emetteur_nom
             ).public_key(
                 cle_publique_client
             ).serial_number(
                 x509.random_serial_number()
             ).not_valid_before(
-                datetime.now(timezone.utc)
+                not_valid_before
             ).not_valid_after(
-                datetime.now(timezone.utc) + timedelta(days=duree_validite_annees * 365)
+                not_valid_after
             ).add_extension(
                 x509.BasicConstraints(ca=False, path_length=None),
                 critical=True,
@@ -172,8 +190,8 @@ class Certificat:
         except Exception as e:
             # Gestion des autres erreurs inattendues
             print("Erreur inattendue:", e)
-            return None
-    
+            return None   
+        
     def convert_bytes_certificat_to_str(self, certificat: bytes) -> Union[str, None]:
         """
             Cette méthode permet de convertir un certifcat de type bytes
@@ -206,27 +224,33 @@ class Certificat:
         cert = load_pem_x509_certificate(certificat, default_backend())
         return cert.serial_number
     
-    def revoquer_certificat(self, certificat: bytes, raison: x509.ReasonFlags):
+    def revoquer_certificat(self, certificat: bytes) -> bool:
         """
             Révoque un certificat en l'ajoutant à la liste de révocation des certificats (CRL).
             
             Args:
                 certificat (bytes): Le certificat à révoquer.
-                raison (x509.ReasonFlags): La raison de la révocation.
-              
         """
-
+        if not isinstance(certificat, bytes):
+            print("certificat doit être de type bytes.")
+            return False
+        
         date_revoque = datetime.now(timezone.utc)
-
-        # Charger le certificat pour obtenir son numéro de série
-        cert = x509.load_pem_x509_certificate(certificat, default_backend())
-        serial_number = cert.serial_number
+        try:
+            cert = x509.load_pem_x509_certificate(certificat, default_backend())
+            serial_number = cert.serial_number
+        except Exception as e:
+            print("ERREUR : Erreur lors de la tentative de révocation.")
+            return False
         
         self.crl = {
             "serial_number": serial_number,
             "date_revoque": date_revoque
         }
-    
+
+        print(f"Certificat révoqué avec succès : {serial_number}")
+        return True
+
 # # Créer une instance de la classe Certificat
 # certificat = Certificat()
 

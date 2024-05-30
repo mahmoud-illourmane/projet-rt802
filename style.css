@@ -1,6 +1,33 @@
 /*==== CONSTS ====*/
     button { border-radius: 15px !important; }
     
+    /*== Scrollbar ==*/
+        /* Cache les flèches */
+        ::-webkit-scrollbar-button {
+            display: none;
+        }
+
+        /* Style général de la barre de défilement */
+        ::-webkit-scrollbar {
+            width: 10px;
+        }
+
+        /* Style du fond de la barre de défilement */
+        ::-webkit-scrollbar-track {
+            background: #959899;
+            border-radius: 10px;
+        }
+
+        /* Style de la poignée de la barre de défilement */
+        ::-webkit-scrollbar-thumb {
+            background: #a92fa1; /* Couleur blanc cassé */
+            border-radius: 10px;
+        }
+
+        /* Style de la poignée de la barre de défilement lors du survol */
+        ::-webkit-scrollbar-thumb:hover { background: #328d6c; }          
+    /*== END/Scrollbar ==*/
+    
     /*= Loading animation =*/
         #loading-animation {
             position: fixed;
@@ -52,6 +79,11 @@
         gap: 10px;
         flex-wrap: wrap;
         justify-self: center;
+    }
+
+    .operations {
+        height: 400px;
+        overflow: auto;   
     }
 
     .vendeur-off, .client-off, .ca-off,

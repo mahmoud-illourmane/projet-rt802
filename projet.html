@@ -65,6 +65,25 @@
                                 <button class="btn btn-sm btn-success mt-2" type="button" :disabled="selectedPubKeyReq === null" @click="getPubKey">Obtenir</button>
                             </div> <!-- Obtenir la clé publique -->
 
+                            <div class="div-flex">
+                                <div class="operation-btn gap-2 mb-2 bg_2">
+                                    <label for="operation" class="form-label">Génération de clés AES</label>
+                                    <button @click="generateAesKey('seller')" class="btn btn-sm btn-primary">A Utiliser avec le vendeur</button>
+                                    <button @click="generateAesKey('ca')" class="btn btn-sm btn-success">A Utiliser avec la CA</button>
+                                </div>
+    
+                                <div class="operation-btn mb-2 bg_1">
+                                    <label for="operation" class="form-label">Échanges de secrets</label>
+                                    <button @click="secretExchangeCa" class="btn btn-sm btn-primary">Avec la CA</button>
+                                    <button @click="secretExchangeSeller" class="btn btn-sm btn-success">Avec le Vendeur</button>
+                                </div>
+                            </div>
+
+                            <div class="operation-btn mb-2 bg_1">
+                                <label for="operation" class="form-label">Générer une paire de clés RSA 2048</label>
+                                <button @click="generateRsaKey" class="btn btn-sm btn-primary">Générer ma paire de clés</button>
+                            </div>
+
                             <div class="verifs-cles-aes-rsa bg_2">
                                 <label for="operation" class="form-label">Vérifier la disponibilité des clés sur le serveur</label>
                                 <div class="div-flex">
@@ -78,24 +97,24 @@
                                 </div>
                             </div>
 
-                            <div class="div-flex">
-                                <div class="operation-btn gap-2 mb-2 bg_2">
-                                    <label for="operation" class="form-label">Génération de clés AES</label>
-                                    <button @click="generateAesKey('seller')" class="btn btn-sm btn-primary">A Utiliser avec le vendeur</button>
-                                    <button @click="generateAesKey('ca')" class="btn btn-sm btn-success">A Utiliser avec la CA</button>
-                                </div>
-    
-                                <div class="operation-btn mb-2 bg_1">
-                                    <label for="operation" class="form-label">Échanges de secrets</label>
-                                    <button @click="secretExchangeCa" class="btn btn-sm btn-primary">Avec la CA</button>
-                                    <button @click="secretExchangeCa" class="btn btn-sm btn-success">Avec le Vendeur</button>
-                                </div>
-                            </div>
-
+                            <!-- Liste des clé AES -->
                             <div class="operation-btn mb-2 bg_1">
-                                <label for="operation" class="form-label">Générer une paire de clés RSA 2048</label>
-                                <button @click="generateRsaKey" class="btn btn-sm btn-primary">Générer ma paire de clés</button>
-                            </div>
+                                <a @click="getAllAesKeys" class="material-icons c_1 cleaner_icon">refresh</a>
+                                <br>
+                                <label for="operation" class="form-label">Liste des clés AES à disposition</label>
+                                <select :disabled="aesKeys.length === 0" class="form-select" aria-label="Aes list keys">
+                                    <option v-for="aesKey in aesKeys" :key="aesKey.identifiant" :value="aesKey.key">
+                                        {{ aesKey.identifiant }} : {{ aesKey.key }}
+                                    </option>
+                                </select>
+                            </div> <!-- Liste des clé AES -->
+
+                            <!-- Liste des clé AES -->
+                            <div class="operation-btn mb-2 bg_2">
+                                <label for="getSellerCertificate" class="form-label">Effectuer un achat</label>
+                                <button @click="getSellerCertificate" class="btn btn-sm btn-success">Obtenir et vérifier le certificat</button>
+                                
+                            </div> <!-- Liste des clé AES -->
                         </div>
                     </div>
 
@@ -121,6 +140,7 @@
                         <h5>Vendeur actif</h5>
                     </div>
 
+                    <!-- operations -->
                     <div class="vendeur-operations operations">
                         <h5 class="c_1 text-center">Opérations disponibles</h5>
                         <hr>
@@ -131,32 +151,17 @@
                                 <label for="operation" class="form-label">Obtenir une clé publique</label>
                                 <select class="form-select" aria-label="Default select example" v-model="selectedPubKeyReq">
                                     <option selected disabled>Choisir</option>
-                                    <option value="client">Client</option>
                                     <option value="ca">Ca</option>
+                                    <option value="client">Client (Facultatif)</option>
                                 </select>
                                 <button class="btn btn-sm btn-success mt-2" type="button" :disabled="selectedPubKeyReq === null" @click="getPubKey">Obtenir</button>
                             </div> <!-- Obtenir la clé publique -->
-
-                            <!-- Vérifie la disponibilité des clés -->
-                            <div class="verifs-cles-aes-rsa bg_1">
-                                <label for="operation" class="form-label">Vérifier la disponibilité des clés</label>
-                                <div class="div-flex">
-                                    <div class="operation-btn mb-2 bg_2">
-                                        <div class="btns-flex">
-                                            <button @click="checkAesKey('ca')" class="btn btn-sm btn-primary" type="button">AES/CA</button>
-                                            <button @click="checkAesKey('client')" class="btn btn-sm btn-success" type="button">AES/CLIENT</button>
-                                            <button @click="checkRsaKey" class="btn btn-sm btn-primary" type="button">RSA/VENDEUR</button>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div> <!-- Vérifie la disponibilité des clés -->
 
                             <!-- Générations CLES, Echange Secret, Demande Certificat -->
                             <div class="div-flex">
                                 <!-- Générations de clé AES -->
                                 <div class="operation-btn mb-2 bg_2">
-                                    <label for="operation" class="form-label">Génération de clés AES</label>
-                                    <button @click="generateAesKey('client')" class="btn btn-sm btn-primary">A Utiliser avec client</button>
+                                    <label for="operation" class="form-label">Générer une clé AES</label>
                                     <button @click="generateAesKey('ca')" class="btn btn-sm btn-success">A Utiliser avec la CA</button>
                                 </div> <!-- Générations de clé AES -->
                                 
@@ -216,7 +221,22 @@
                                         </div>
                                     </div>
                                 </div> <!-- Demande de certificat -->
+
                             </div> <!-- Générations CLES, Echange Secret, Demande Certificat -->
+
+                            <!-- Vérifie la disponibilité des clés -->
+                            <div class="verifs-cles-aes-rsa bg_1">
+                                <label for="operation" class="form-label">Vérifier la disponibilité des clés</label>
+                                <div class="div-flex">
+                                    <div class="operation-btn mb-2 bg_2">
+                                        <div class="btns-flex">
+                                            <button @click="checkAesKey('ca')" class="btn btn-sm btn-primary" type="button">AES/CA</button>
+                                            <button @click="checkAesKey('client')" class="btn btn-sm btn-success" type="button">AES/CLIENT</button>
+                                            <button @click="checkRsaKey" class="btn btn-sm btn-primary" type="button">RSA/VENDEUR</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div> <!-- Vérifie la disponibilité des clés -->
 
                             <!-- Générations des clés RSA -->
                             <div class="operation-btn mb-2 bg_2">
@@ -224,20 +244,42 @@
                                 <button @click="generateRsaKey" class="btn btn-sm btn-primary">Générer</button>
                             </div> <!-- Générations des clés RSA -->
 
-                            <!-- Certificats à mettre à disposition -->
+                            <!-- Liste des clé AES -->
+                            <div class="operation-btn mb-2 bg_1">
+                                <a @click="getAllAesKeys" class="material-icons c_1 cleaner_icon">refresh</a>
+                                <br>
+                                <label for="operation" class="form-label">Liste des clés AES à disposition</label>
+                                <select :disabled="aesKeys.length === 0" class="form-select" aria-label="Aes list keys">
+                                    <option v-for="aesKey in aesKeys" :key="aesKey.identifiant" :value="aesKey.key">
+                                        {{ aesKey.identifiant }} : {{ aesKey.key }}
+                                    </option>
+                                </select>
+                            </div> <!-- Liste des clé AES -->
+
+                            <!-- Certificats à disposition -->
                             <div class="operation-btn mb-2 bg_2">
                                 <h5>Scénarios</h5>
+                                <a @click="getAllCertificates" class="material-icons c_1 cleaner_icon">refresh</a>
+                                <br>
                                 <label for="operation" class="form-label">Choisir le certificat à envoyer au client</label>
-                                <select class="form-select" aria-label="Default select example" v-model="selectedPubKeyReq">
-                                    <option selected disabled>Choisir</option>
-                                    <option value="client">Client</option>
-                                    <option value="ca">Ca</option>
+                                <select :disabled="certificatesList.length === 0" v-model="selectedCertificatToSend" class="form-select" aria-label="List of certificates">
+                                    <!-- Option par défaut -->
+                                    <option disabled value="">Sélectionnez un certificat</option>
+                                    <option v-for="certificate in certificatesList" :key="certificate.identifiant" :value="certificate.identifiant">
+                                        {{ certificate.identifiant }} (Révoqué: {{ certificate.revoked }})
+                                    </option>
                                 </select>
-                                <button class="btn btn-sm btn-success mt-2" type="button" :disabled="selectedPubKeyReq === null" @click="getPubKey">Choisir ce certificat</button>
-                            </div> <!-- Certificats à mettre à disposition -->
+                                <button class="btn btn-sm btn-success mt-2" type="button" :disabled="selectedCertificatToSend === ''" @click="updateCertificatSender">Choisir ce certificat</button>
+                                
+                                <div class="default-certif mt-2">
+                                    <label for="default-certif">Le certificat par défaut</label>
+                                    <br>
+                                    <span class="badge text-bg-secondary" v-if="default_certif == ''">AUCUN</span>
+                                    <b class="badge text-bg-success" v-else>{{ default_certif }}</b>
+                                </div>
+                            </div> <!-- Certificats à disposition -->
                         </div>
-
-                    </div>
+                    </div> <!-- operations -->
 
                     <div class="vendeur-print print">
                         <h6 class="c_1">Sortie</h6>
@@ -263,7 +305,7 @@
                     <h5>Ca actif</h5>
                 </div>
 
-                <div class="ca-operations operations">
+                <div class="ca-operations operations-ca">
                     <h6 class="c_1">Opérations disponibles</h6>
 
                     <div class="operation-btns-ca">
@@ -286,7 +328,7 @@
                                 {{ aesKey.identifiant }} : {{ aesKey.key }}
                             </option>
                         </select>
-                    </div>
+                    </div> <!-- Liste des clé AES -->
                 </div>
 
                 <div class="ca-print print">
@@ -340,9 +382,11 @@
                 let vendeurAvailable = ref(false);
 
                 let selectedPubKeyReq = ref(null);
-                
+                let selectedCertificatToSend = ref(null);
+
                 // Résultat d'une requête
                 let printVendeur = ref('');
+                let clearPrintTimer;
 
                 // Génération du certificat
                 let country_name = ref('FR');
@@ -352,7 +396,13 @@
                 let common_name = ref('Mahmoud');
 
                 let btnHandleGenerateCertificat = ref(false);
-                
+                // Liste des certificats
+                let certificatesList = ref([]);
+                let default_certif = ref('');
+
+                // Liste des clés AES
+                let aesKeys = ref([]);
+            
                 /*==== FONCTIONS ====*/
                     /*== TOOLS ==*/
                         function cleanPrintVendeur() {
@@ -360,11 +410,10 @@
                         }
                         
                         function autoClearPrintVendeur() {
-                            setTimeout(() => {
-                                printVendeur.value = '';
-                            }, 10000);
+                            clearTimeout(clearPrintTimer); // Réinitialise le timer à chaque fois que la fonction est appelée
+                            clearPrintTimer = setTimeout(cleanPrintVendeur, 10000);
                         }
-
+                        
                         watch(printVendeur, () => {
                             autoClearPrintVendeur();
                         });
@@ -429,7 +478,56 @@
 
                             selectedPubKeyReq.value = null;
                         }
+
+                        /*
+                        *   Retourne au format base64 toutes les clés AES
+                        *   dont le vendeur dispose.
+                        */
+                        async function getAllAesKeys() {
+                            try {
+                                aesKeys.value = [];
+                                const result = await a_getAllAesKeys();
+                                if (result !== -1) {
+                                    aesKeys.value = Object.entries(result).map(([identifiant, key]) => ({ identifiant, key }));
+                                }
+                            } catch (error) {
+                                console.error('Erreur :', error);
+                            }
+                        }
+                        
+                        /**
+                        *   Retourne la liste de tous les certificats dont   
+                        *   le vendeur dispose.
+                        */
+                        async function getAllCertificates() {
+                            try {
+                                certificatesList.value = [];
+                                const result = await a_getAllCertificates();
+                                if (result !== -1) {
+                                    certificatesList.value = Object.entries(result).map(([identifiant, data]) => ({
+                                        identifiant,
+                                        revoked: data.revoked
+                                    }));
+                                }
+                            } catch (error) {
+                                console.error('Erreur :', error);
+                            }
+                        }
                     /*== END/GET ==*/
+
+                    /*== UPDATE ==*/
+                        /*
+                        *   Génère les clés RSA.
+                        */
+                        async function updateCertificatSender() {
+                            try {
+                                const result = await a_updateCertificatSender();
+                                printVendeur.value = result;
+                            } catch (error) {
+                                console.error('VENDEUR: Erreur (updateCertificatSender) :', error);
+                            }
+                        }
+                    /*== END/UPDATE ==*/
 
                     /*== CREATE ==*/
                         /*
@@ -508,7 +606,7 @@
                                 country_name.value = '';
                             }
                         }
-                        
+        
                     /*== END/CREATE ==*/
 
                 /*==== END/FONCTIONS ====*/
@@ -579,6 +677,7 @@
                     /*== END/VERIFY ==*/
 
                     /*== GET ==*/
+
                         /*
                         *   Récupère la clé publique de la CA sur le client.
                         *   Et l'affiche sur la vue avec une deuxième requête.
@@ -636,7 +735,77 @@
                             }
                         }
                         
+                        /*
+                        *   Retourne la liste de toutes les clé aes dont dispose la CA.
+                        */
+                        async function a_getAllAesKeys() {
+                            try {
+                                const response = await axios.get('http://127.0.0.1:5002/seller/api/get-all-aes-key');
+                                const statusCode = response.status;
+
+                                if(statusCode == 200) {
+                                    return response.data.aes_keys_dic;
+                                } else {
+                                    printVendeur.value = "ERROR: Erreur lors de la requête API (a_getAllAesKeys)";
+                                    console.log('VENDEUR : Erreur lors de la requête API (a_getAllAesKeys)');
+                                    return -1;
+                                }
+                            } catch (err) {
+                                printVendeur.value = "ERROR: " + err.message;
+                                console.log('VENDEUR : Erreur lors de la requête API (a_getAllAesKeys) : ', err.message);
+                            }
+                        }
+
+                        /*
+                        *   Retourne la liste de toutes les clé aes dont dispose la CA.
+                        */
+                        async function a_getAllCertificates() {
+                            try {
+                                const response = await axios.get('http://127.0.0.1:5002/seller/api/get-all-certificates');
+                                const statusCode = response.status;
+
+                                if(statusCode == 200) {
+                                    return response.data.certificates_dic;
+                                } else {
+                                    printVendeur.value = "ERROR: Erreur lors de la requête API (a_getAllCertificates)";
+                                    console.log('VENDEUR : Erreur lors de la requête API (a_getAllCertificates)');
+                                    return -1;
+                                }
+                            } catch (err) {
+                                printVendeur.value = "ERROR: " + err.message;
+                                console.log('VENDEUR : Erreur lors de la requête API (a_getAllCertificates) : ', err.message);
+                            }
+                        }
+
                     /*== END/GET ==*/
+
+                    /*== UPDATE ==*/
+                        /*
+                        *   Met à jour le certificat par défaut à transmettre au client.
+                        */
+                        async function a_updateCertificatSender() {
+                            console.log("Certificat choisi: "+ selectedCertificatToSend.value);
+
+                            try {
+                                let dataToSend = {
+                                    'certId': selectedCertificatToSend.value
+                                }
+                                const response = await axios.put('http://127.0.0.1:5002/seller/api/update-certificat-sender', dataToSend);
+                                const statusCode = response.status;
+
+                                if(statusCode == 200) {
+                                    default_certif.value = selectedCertificatToSend.value;
+                                    return response.data.message;
+                                } else {
+                                    return response.data.error;
+                                }
+                            } catch (err) {
+                                console.log('VENDEUR : Erreur lors de la requête API (a_updateCertificatSender) :', err.message);
+                            } finally { 
+                                selectedCertificatToSend.value = '';
+                            }
+                        }
+                    /*== END/UPDATE ==*/
 
                     /*== CREATE ==*/
                         /*
@@ -696,6 +865,8 @@
                                 }
                             } catch (err) {
                                 console.log('VENDEUR : Erreur lors de la requête API :', err.message);
+                            } finally {
+                                getAllAesKeys();
                             }
                         }                        
                     
@@ -711,6 +882,8 @@
                                 }
                             } catch (err) {
                                 console.log('VENDEUR : Erreur lors de la requête API (a_handleGenerateCertificat) : ', err.message);
+                            } finally {
+                                getAllCertificates();
                             }
                         }
                     /*== END/CREATE ==*/
@@ -725,6 +898,7 @@
                     vendeurAvailable,
                     printVendeur,
                     selectedPubKeyReq,
+                    aesKeys,
 
                     // Génération du certificat
                     country_name,
@@ -733,7 +907,9 @@
                     organization_name,
                     common_name,
                     btnHandleGenerateCertificat,
-                    handleGenerateCertificat,
+                    certificatesList,
+                    selectedCertificatToSend,
+                    default_certif,
 
                     // Fonctions
                     cleanPrintVendeur,
@@ -742,11 +918,17 @@
                     getPubKey,
                     checkRsaKey,
                     checkAesKey,
+                    getAllAesKeys,
+                    getAllCertificates,
 
                     // CREATE
                     generateRsaKey,
                     generateAesKey,
                     secretExchangeCa,
+                    handleGenerateCertificat,
+
+                    // UPDATE
+                    updateCertificatSender,
                 }
             }
         }).mount('#vendeur');
@@ -759,20 +941,25 @@
 
                 let clientAvailable = ref(false);
                 let selectedPubKeyReq = ref(null);
+                let clearPrintTimer;
 
                 // Résultat d'une requête
                 let printClient = ref('');
+
+                // Liste des clé AES à disposition
+                let aesKeys = ref([]);
 
                 /*==== FONCTIONS ====*/
                     /*== TOOLS ==*/
                         function cleanPrintClient() {
                             printClient.value = '';
                         }
+                        
                         function autoClearPrintClient() {
-                            setTimeout(() => {
-                                printClient.value = '';
-                            }, 10000);
+                            clearTimeout(clearPrintTimer); // Réinitialise le timer à chaque fois que la fonction est appelée
+                            clearPrintTimer = setTimeout(cleanPrintClient, 10000);
                         }
+                        
                         watch(printClient, () => {
                             autoClearPrintClient();
                         });
@@ -837,6 +1024,31 @@
 
                             selectedPubKeyReq.value = null;
                         }
+
+                        /*
+                        *   Retourne au format base64 toutes les clés AES
+                        *   dont le vendeur dispose.
+                        */
+                        async function getAllAesKeys() {
+                            try {
+                                aesKeys.value = [];
+                                const result = await a_getAllAesKeys();
+                                if (result !== -1) {
+                                    aesKeys.value = Object.entries(result).map(([identifiant, key]) => ({ identifiant, key }));
+                                }
+                            } catch (error) {
+                                console.error('Erreur :', error);
+                            }
+                        }
+
+                        async function getSellerCertificate() {
+                            try {
+                                const result = await a_getSellerCertificate();
+                                printClient.value = result;
+                            } catch (error) {
+                                console.error('Erreur :', error);
+                            }
+                        }
                     /*== END/GET ==*/
 
                     /*== CREATE ==*/
@@ -872,6 +1084,19 @@
                         async function secretExchangeCa() {
                             try {
                                 const result = await a_secretExchangeCa();
+                                printClient.value = result;
+                            } catch (error) {
+                                printClient.value = error;
+                            }
+                        }
+
+                        /**
+                        *   Permet de faire l'échange du secret
+                        *   entre le client et le vendeur.
+                        */
+                        async function secretExchangeSeller() {
+                            try {
+                                const result = await a_secretExchangeSeller();
                                 printClient.value = result;
                             } catch (error) {
                                 printClient.value = error;
@@ -947,7 +1172,31 @@
                     /*== END/VERIFY ==*/
 
                     /*== GET ==*/
-                        
+                    
+                        /*
+                        *   Retourne la liste de toutes les clé aes dont dispose la CA.
+                        */
+                        async function a_getSellerCertificate() {
+                            try {
+                                const response = await axios.get('http://127.0.0.1:5001/client/api/get-seller-certificate');
+                                const statusCode = response.status;
+
+                                if(statusCode == 200) {
+                                    const response2 = await axios.get('http://127.0.0.1:5001/client/api/verify-seller-certificate');
+                                    const statusCode2 = response.status;
+
+                                    return response2.data.message;
+                                } else {
+                                    printClient.value = "ERROR: Erreur lors de la requête API (a_getSellerCertificate)";
+                                    console.log('CLIENT : Erreur lors de la requête API (a_getSellerCertificate)');
+                                    return -1;
+                                }
+                            } catch (err) {
+                                printClient.value = "ERROR: " + err.message;
+                                console.log('CLIENT : Erreur lors de la requête API (a_getSellerCertificate) : ', err.message);
+                            }
+                        }
+                    
                         /*
                         *   Récupère la clé publique de la CA sur le client.
                         *   Et l'affiche sur la vue avec une deuxième requête.
@@ -1005,6 +1254,27 @@
                             }
                         }
                         
+                        /*
+                        *   Retourne la liste de toutes les clé aes dont dispose la CA.
+                        */
+                        async function a_getAllAesKeys() {
+                            try {
+                                const response = await axios.get('http://127.0.0.1:5001/client/api/get-all-aes-key');
+                                const statusCode = response.status;
+
+                                if(statusCode == 200) {
+                                    return response.data.aes_keys_dic;
+                                } else {
+                                    printClient.value = "ERROR: Erreur lors de la requête API (a_getAllAesKeys)";
+                                    console.log('CLIENT : Erreur lors de la requête API (a_getAllAesKeys)');
+                                    return -1;
+                                }
+                            } catch (err) {
+                                printClient.value = "ERROR: " + err.message;
+                                console.log('CLIENT : Erreur lors de la requête API (a_getAllAesKeys) : ', err.message);
+                            }
+                        }
+                    
                     /*== END/GET ==*/
 
 
@@ -1024,7 +1294,7 @@
                                 }
                             } catch (err) {
                                 console.log('CLIENT : Erreur lors de la requête API (a_generateRsaKey) :', err.message);
-                            } finally { }
+                            }
                         }
 
                         /*
@@ -1067,13 +1337,28 @@
                             } catch (err) {
                                 console.log('CLIENT : Erreur lors de la requête API (a_secretExchangeCa) :', err.message);
                             }
-                        }                        
+                        }    
+                        
+                        /*
+                        *   Echange un secret entre le client et le vendeur.
+                        */
+                        async function a_secretExchangeSeller() {
+                            try {
+                                const response = await axios.get('http://127.0.0.1:5001/client/api/secret-exchange-seller');
+                                const statusCode = response.status;
+                        
+                                if (statusCode == 200) {
+                                    return response.data.message;
+                                } else {
+                                    return response.data.error;
+                                }
+                            } catch (err) {
+                                console.log('CLIENT : Erreur lors de la requête API (a_secretExchangeCa) :', err.message);
+                            }
+                        }    
 
                     /*== END/CREATE ==*/
 
-                    
-
-                    
                 /*==== END/REQUETES AXIOS ====*/
 
                 onMounted(async () => {
@@ -1085,6 +1370,7 @@
 
                     selectedPubKeyReq,
                     printClient,
+                    aesKeys,
 
                     // Outils
                     cleanPrintClient,
@@ -1094,10 +1380,15 @@
                     generateAesKey,
                     getPubKey,
                     secretExchangeCa,
+                    secretExchangeSeller,
 
                     // Fonctions Vérifs
                     checkRsaKey,
                     checkAesKey,
+
+                    // GET
+                    getAllAesKeys,
+                    getSellerCertificate,
                 }
             }
         }).mount('#client');
@@ -1110,6 +1401,7 @@
 
                 let caAvailable = ref(false);
                 let printCa = ref('');
+                let clearPrintTimer;
 
                 // Liste des clés AES
                 let aesKeys = ref([]);
@@ -1119,11 +1411,12 @@
                         function cleanPrintCa() {
                             printCa.value = '';
                         }
+                        
                         function autoClearPrintCa() {
-                            setTimeout(() => {
-                                printCa.value = '';
-                            }, 10000);
+                            clearTimeout(clearPrintTimer); // Réinitialise le timer à chaque fois que la fonction est appelée
+                            clearPrintTimer = setTimeout(cleanPrintCa, 10000);
                         }
+                        
                         watch(printCa, () => {
                             autoClearPrintCa();
                         });
@@ -1207,7 +1500,7 @@
                             }
                         } catch (err) {
                             console.log('CA : Erreur lors de la requête API (a_generateSelfSignedCertificate) : ', err.message);
-                        } finally {}
+                        }
                     }
 
                     /*
@@ -1226,7 +1519,7 @@
                             }
                         } catch (err) {
                             console.log('CA : Erreur lors de la requête API (a_checkSelfSignedCertificate) :', err.message);
-                        } finally {}
+                        }
                     }
                     
                     /*

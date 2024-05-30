@@ -25,7 +25,7 @@ def configure_mqtt(app):
 
 def on_mqtt_connect(client, userdata, flags, rc):
     """
-    Logique à exécuter lors de la connexion à la file MQTT.
+        Logique à exécuter lors de la connexion à la file MQTT.
     """
     if rc == 0:
         print("CA : connexion à la file MQTT établie avec succès.")
@@ -107,6 +107,8 @@ def on_mqtt_message(client, userdata, message):
 
         if code == 1: # Envoi de la clé publique au vendeur
             from app import rsa_instance
+            print("TOPIC VENDEUR CODE 1: DEMANDE D'ENVOIE DE LA CLE PUBLIQUE AU VENDEUR.")
+            
             pubKey = rsa_instance.get_my_pub_key_pem()
             if pubKey == None:
                 print("ERROR PUBKEY")
@@ -117,18 +119,21 @@ def on_mqtt_message(client, userdata, message):
             }
             
             publish_message(os.getenv("TOPIC_PUBLISH_SELLER"), json.dumps(message))
-            print("TOPIC SELLER : MESSAGE CODE 1 PUBLIE.")
+            print("TOPIC VENDEUR CODE 1 PUBLIE.")
             
         elif code == 2: # Échange du secret avec le vendeur
-            print(f"TOPIC VENDEUR : Je recois une demande d'échange de secret.")
+            print(f"TOPIC VENDEUR CODE 2 : DEMANDE D'ECHANGE DE SECRET")
             aes_key_encrypted_by_rsa_base64 = message_data['data']
 
             receive_exchange_secret(rsa_instance, aes_instance, aes_key_encrypted_by_rsa_base64, "seller")  
-            print("\nTOPIC VENDEUR : SECRET RECU.")
+            print("\nTOPIC VENDEUR CODE 2 TRAITE.")
         
-        elif code == 3: # Demande de certificat
-            from app import certificat_instance
-            print(f"TOPIC VENDEUR : Je recois une demande de certificat.")
+        elif code == 3: # Réception d'une demande de certificat
+            from app import certificat_instance, aes_instance
+            print("TOPIC VENDEUR CODE 3 : DEMANDE DE CERTIFICAT")
+            
+            # Dictionnaire où je stock les trois certificats pour les scénarios
+            certificates = {}
             
             # Récuperation de la clé AES des communications avec le vendeur
             aesKeySeller = aes_instance.get_aes_key("seller")
@@ -155,24 +160,47 @@ def on_mqtt_message(client, userdata, message):
             if not isinstance(pubKeyRSAPublicKey, RSAPublicKey):
                 print("ERROR: La variable 'pubKeyRSAPublicKey' n'est pas au format RSAPublicKey.")
                 return None
+
+            # CREATIONS DES CERTIFICATS
             
-            certificat = certificat_instance.creer_certificat_signe_par_ca(rsa_instance.get_private_key(), pubKeyRSAPublicKey, data_json, 1)
-            if certificat is None:
+            # Certificat valide
+            certificat_valide = certificat_instance.creer_certificat_signe_par_ca(rsa_instance.get_private_key(), pubKeyRSAPublicKey, data_json, 1, False)
+            if certificat_valide is None:
                 return None
-            print(certificat)
+            # Cryptage du certificat valide
+            certificat_valide_crypted = aes_instance.encrypt(certificat_valide, aesKeySeller, True)
+            # Ajout dans le dictionnaire pour l'envoi
+            certificates["certif_valide"] = certificat_valide_crypted
             
-            certificat_encoded = certificat_instance.convert_bytes_certificat_to_str(certificat)
-            if certificat_encoded is None:
+            # Certificat expiré
+            certificat_expire = certificat_instance.creer_certificat_signe_par_ca(rsa_instance.get_private_key(), pubKeyRSAPublicKey, data_json, 1, True)
+            if certificat_expire is None:
                 return None
-            print("certificat_encoded: \n", certificat_encoded)
+            # Cryptage
+            certificat_expire_crypted = aes_instance.encrypt(certificat_expire, aesKeySeller, True)
+            certificates["certif_expired"] = certificat_expire_crypted
+            
+            # Certificat révoqué
+            certificat_revoked = certificat_instance.creer_certificat_signe_par_ca(rsa_instance.get_private_key(), pubKeyRSAPublicKey, data_json, 1, False)
+            if certificat_revoked is None:
+                return None
+            # Cryptage
+            certificat_revoked_crypted = aes_instance.encrypt(certificat_revoked, aesKeySeller, True)
+            certificates["certif_revoked"] = certificat_revoked_crypted
+            
+            # Ajout du certificat révoqué à la CRL de la CA
+            error = certificat_instance.revoquer_certificat(certificat_revoked)
+            if error is not True:
+                print("ERREUR REVOCATION")
+                return None
             
             message = {
                 'code': 2,
-                'data': certificat_encoded
+                'data': certificates
             }
             
             publish_message(os.getenv("TOPIC_PUBLISH_SELLER"), json.dumps(message))
-            print("TOPIC SELLER : MESSAGE CODE 1 PUBLIE.")
+            print("TOPIC VENDEUR CODE 3 : REPONSE PUBLIE")
             
         else:
             # Code inconnu

@@ -1,7 +1,6 @@
 from flask import current_app
 from flask_mqtt import Mqtt
 from flask import Blueprint
-
 import os, json
 
 mqtt_bp = Blueprint('mqtt', __name__)
@@ -32,7 +31,7 @@ def on_mqtt_connect(client, userdata, flags, rc):
         mqtt.subscribe(os.getenv("TOPIC_SUB_CA"))
         mqtt.subscribe(os.getenv("TOPIC_SUB_SELLER"))
     else:
-        print(f"Échec de la connexion à la file MQTT avec le code de retour {rc}")
+        print(f"CLIENT :  Échec de la connexion à la file MQTT avec le code de retour:\n{rc}")
 
 def on_mqtt_message(client, userdata, message):
     """
@@ -90,6 +89,20 @@ def on_mqtt_message(client, userdata, message):
                 
                 publish_message(os.getenv("TOPIC_PUBLISH_SELLER"), json.dumps(message))
                 print("TOPIC CLIENT : CLE PUBLIQUE ENVOYE AU VENDEUR.")
+            
+            elif code == 3: # Réception d'un certificat
+                from app import certificat_instance
+                
+                print("TOPIC CLIENT : RECEPTION D'UN CERTIFICAT")
+                                
+                cert = message_data['data']
+                # Insertion du certificat dans la classe pour pouvoir afficher sur la vue.
+                error = certificat_instance.insert_certificat(cert)
+                if error == False:
+                    print("ERROR INSERTION DU CERTIFICAT DANS LA CLASSE.")
+                    return None
+                    
+                print("TOPIC CLIENT : LE CERTIFICAT A BIEN ETE INSERER DANS LA CLASSE DE CERTIFICAT.")
             else:
                 # Code inconnu
                 print("Code inconnu")
