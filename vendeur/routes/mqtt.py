@@ -141,7 +141,7 @@ def on_mqtt_message(client, userdata, message):
                 receive_exchange_secret(rsa_instance, aes_instance, aes_key_encrypted_by_rsa_base64, "client")  
                 print("\nTOPIC VENDEUR : SECRET RECU DE LA PART DU CLIENT.")
             
-            elif code == 4: # Envoi de la clé publique au client
+            elif code == 4: # Envoi le certificat au client
                 print("RECU DEMANDE D'ENVOI DU CERTIFICAT.")
                 cert = certificat_instance.get_certificate_to_send()
                 if cert is None:

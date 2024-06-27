@@ -23,7 +23,7 @@ class ChiffrementAES:
 
     def generate_key(self):
         """
-            Génère une clé AES de 256 bits aléatoire.
+            Génère une clé AES de 32 octets (256 bits) aléatoire.
         """
         return os.urandom(32)
 
@@ -193,15 +193,16 @@ class ChiffrementAES:
         try:
             iv = os.urandom(16)
             cipher = Cipher(algorithms.AES(aes_key), modes.CBC(iv), backend=default_backend())
-            encryptor = cipher.encryptor()
-            padded_data = self.pad_data(data)
-            ciphertext = encryptor.update(padded_data) + encryptor.finalize()
-            encrypted_data = iv + ciphertext
+            encryptor = cipher.encryptor()  # Objet de chiffrement
+            padded_data = self.pad_data(data)  # Pour s'assurer que les données sont de taille multiple de 16 octets.
+            ciphertext = encryptor.update(padded_data) + encryptor.finalize()  # Chiffre les données et finalise le chiffrement.
+            encrypted_data = iv + ciphertext  # Concatène l'IV avec le texte chiffré pour la transmission.
+            
             if use_base64:
                 return base64.b64encode(encrypted_data).decode('utf-8')
             else:
                 return encrypted_data
-            
+    
         except ValueError as ve:
             print(f"Erreur de valeur lors du chiffrement (encrypt) :\n{ve}")
             return None
@@ -229,12 +230,12 @@ class ChiffrementAES:
                 # Si les données sont encodées en base64, les décoder en bytes
                 data = base64.b64decode(data)
             
-            iv = data[:16]
-            ciphertext = data[16:]
-            cipher = Cipher(algorithms.AES(key), modes.CBC(iv), backend=default_backend())
-            decryptor = cipher.decryptor()
-            padded_plaintext = decryptor.update(ciphertext) + decryptor.finalize()
-            plaintext = self.unpad_data(padded_plaintext)
+            iv = data[:16]  # Extrait l'IV des données
+            ciphertext = data[16:]  # Extrait le texte chiffré
+            cipher = Cipher(algorithms.AES(key), modes.CBC(iv), backend=default_backend())  # Configure le déchiffreur AES-CBC
+            decryptor = cipher.decryptor()  # Objet de déchiffrement
+            padded_plaintext = decryptor.update(ciphertext) + decryptor.finalize()  # Déchiffre et finalise
+            plaintext = self.unpad_data(padded_plaintext)  # Supprime le padding PKCS#7
             
             return plaintext
         except TypeError as te:

@@ -99,7 +99,7 @@ class Certificat:
                 bytes: Le certificat généré au format PEM.
         """
 
-        # Définition du nom du sujet et de l'émetteur du certificat
+        # Définition du nom du sujet et de l'émetteur du certificat (CA elle même)
         sujet = x509.Name([
             x509.NameAttribute(NameOID.COUNTRY_NAME, self.country_name),
             x509.NameAttribute(NameOID.STATE_OR_PROVINCE_NAME, self.state_or_province_name),
@@ -109,7 +109,7 @@ class Certificat:
         ])
         emetteur = sujet  # Certificat autosigné
 
-        # Construire le certificat
+        # Construction du certificat
         cert = x509.CertificateBuilder().subject_name(
             sujet
         ).issuer_name(
@@ -122,7 +122,7 @@ class Certificat:
             datetime.now(timezone.utc)
         ).not_valid_after(
             datetime.now(timezone.utc) + timedelta(days=duree_validite_annees * 365)
-        ).add_extension(
+        ).add_extension(    # Certificat pour la CA
             x509.BasicConstraints(ca=True, path_length=None),
             critical=True,
         ).add_extension(
@@ -130,7 +130,7 @@ class Certificat:
             critical=False,
         ).sign(self.cle_privee, hashes.SHA256(), default_backend())
 
-        # Sérialiser le certificat
+        # Sérialisation du certificat
         cert_pem = cert.public_bytes(encoding=serialization.Encoding.PEM)
 
         self.my_certificat = cert_pem
@@ -145,7 +145,7 @@ class Certificat:
             cle_publique_client (RSAPublicKey): Clé publique du client pour laquelle le certificat est créé.
             data_user_json (dict): Données de l'utilisateur pour le certificat.
             duree_validite_annees (int): Durée de validité du certificat en années (par défaut 1).
-            expired (bool): Indique si le certificat doit être créé comme expiré.
+            expired (bool): Indique si le certificat doit être créé comme expiré (scénario projet).
 
         Returns:
             bytes: Le certificat généré au format PEM.
@@ -157,7 +157,7 @@ class Certificat:
                 print("ERREUR: La clé publique doit être de type RSAPublicKey.")
                 return None
             
-            # Définir le nom du sujet du certificat
+            # Définition du nom du sujet du certificat
             sujet_nom = x509.Name([
                 x509.NameAttribute(NameOID.COUNTRY_NAME, data_user_json['country_name']),
                 x509.NameAttribute(NameOID.STATE_OR_PROVINCE_NAME, data_user_json['state_or_province_name']),
@@ -166,7 +166,7 @@ class Certificat:
                 x509.NameAttribute(NameOID.COMMON_NAME, data_user_json['common_name']),
             ])
 
-            # Définir le nom de l'émetteur (l'autorité de certification)
+            # Définition du nom de l'émetteur (CA)
             emetteur_nom = x509.Name([
                 x509.NameAttribute(NameOID.COUNTRY_NAME, self.country_name),
                 x509.NameAttribute(NameOID.STATE_OR_PROVINCE_NAME, self.state_or_province_name),
@@ -179,7 +179,7 @@ class Certificat:
             not_valid_before = datetime.now(timezone.utc) if not expired else datetime.now(timezone.utc) - timedelta(days=1)
             not_valid_after = datetime.now(timezone.utc) + timedelta(days=duree_validite_annees * 365) if not expired else datetime.now(timezone.utc) - timedelta(days=1)
 
-            # Construire le certificat
+            # Construction du certificat
             cert = x509.CertificateBuilder().subject_name(
                 sujet_nom
             ).issuer_name(
@@ -192,30 +192,25 @@ class Certificat:
                 not_valid_before
             ).not_valid_after(
                 not_valid_after
-            ).add_extension(
+            ).add_extension(    # Définit le certificat comme non-CA
                 x509.BasicConstraints(ca=False, path_length=None),
                 critical=True,
-            ).add_extension(
+            ).add_extension(    # Ajoute un identifiant unique pour la clé publique du sujet
                 x509.SubjectKeyIdentifier.from_public_key(cle_publique_client),
                 critical=False,
             ).sign(cle_privee_ca, hashes.SHA256(), default_backend())
 
-            # Sérialiser le certificat
+            # Sérialise le certificat
             cert_pem = cert.public_bytes(encoding=serialization.Encoding.PEM)
 
             return cert_pem
         except ValueError as e:
-            # Gestion des erreurs de valeur
             print("Erreur:", e)
             return None
-
         except InvalidSignature as e:
-            # Gestion des erreurs de signature
             print("Erreur de signature:", e)
             return None
-
         except Exception as e:
-            # Gestion des autres erreurs inattendues
             print("Erreur inattendue:", e)
             return None   
         
@@ -268,19 +263,21 @@ class Certificat:
             print("certificat doit être de type bytes.")
             return False
         
-        date_revoque = datetime.now(timezone.utc)
+        date_revoque = datetime.now(timezone.utc)  # La date de révocation.
         try:
             cert = x509.load_pem_x509_certificate(certificat, default_backend())
-            serial_number = cert.serial_number
+            serial_number = cert.serial_number 
         except Exception as e:
             print("ERREUR : Erreur lors de la tentative de révocation.")
             return False
         
+        # Informations du certificat révoqué
         new_ = {
             "serial_number": serial_number,
             "date_revoque": date_revoque
         }
-        self.crl.append(new_)
+        # Ajout du certificat à la CRL
+        self.crl.append(new_) 
         
         print(f"Certificat révoqué avec succès : {serial_number}")
         return True

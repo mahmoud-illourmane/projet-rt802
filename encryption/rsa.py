@@ -46,9 +46,9 @@ class ChiffrementRSA:
                 RSAPrivateKey: La clé privée RSA
         """
         private_key = rsa.generate_private_key(
-            public_exponent=65537,
-            key_size=taille_cle,
-            backend=default_backend()
+            public_exponent=65537,   # e
+            key_size=taille_cle,     # n
+            backend=default_backend()   # d privé 
         )
         
         return private_key
@@ -205,6 +205,7 @@ class ChiffrementRSA:
 
             ciphertext = public_key.encrypt(
                 message,
+                # Utilise SHA-256 pour améliorer la sécurité du padding OAEP
                 padding.OAEP(
                     mgf=padding.MGF1(algorithm=hashes.SHA256()),
                     algorithm=hashes.SHA256(),
@@ -243,6 +244,7 @@ class ChiffrementRSA:
         try:
             plaintext = self.private_key.decrypt(
                 message_chiffre,
+                # Enlève le padding OAEP
                 padding.OAEP(
                     mgf=padding.MGF1(algorithm=hashes.SHA256()),
                     algorithm=hashes.SHA256(),
