@@ -6,4 +6,4 @@ cryptography==42.0.7
 Flask==3.0.3
 Flask-Cors==4.0.1
 Flask-MQTT==1.2.1
-install Flask[async]
+Flask[async]
