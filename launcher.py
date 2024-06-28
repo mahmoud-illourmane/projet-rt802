@@ -36,9 +36,9 @@ def launch_server(command, working_directory, log_file):
 
 # Commandes pour lancer les serveurs avec les chemins corrects
 commands = [
-    ("python app.py", "ca", "ca.log"),        
-    ("python app.py", "vendeur", "vendeur.log"),   
-    ("python app.py", "client", "client.log")     
+    ("python3 app.py", "ca", "ca.log"),        
+    ("python3 app.py", "vendeur", "vendeur.log"),   
+    ("python3 app.py", "client", "client.log")     
 ]
 
 # Lancement des serveurs dans des threads différents
@@ -79,7 +79,7 @@ while True:
     elif choice == '4':
         print("Pour arrêter les threads vous devez fermer votre terminal actuel.")
         # Ne s'arrête pas sauf si je ferme le terminal.
-        # Indiquer aux threads de s'arrêter
+        # Indique aux threads de s'arrêter
         exit_flag.set()
         # Attendre que tous les threads se terminent
         for thread in threads:
