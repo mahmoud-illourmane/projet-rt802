@@ -48,8 +48,10 @@ def on_mqtt_message(client, userdata, message):
         if 'code' in message_data:
             from app import rsa_instance, aes_instance, certificat_instance
             
-            code = message_data['code']
+            code = message_data['code'] # Code de l'opération reçu
+            
             if code == 1: # Réception de la clé publique de la CA
+                # Appel de la méthode didié pour transformer la clé reçu au bon format
                 pubKeyCa = rsa_instance.receive_pub_key_pem(message_data['data'])
                 # Vérification si l'objet pubKeyCa est créé avec succès
                 if pubKeyCa:
@@ -61,6 +63,7 @@ def on_mqtt_message(client, userdata, message):
                 print("TOPIC CA CODE 2 : RECEPTION D'UNE REPONSE DE CERTIFICAT REVOQUE OU NON.")
                 encrypted_result = message_data['data']
                 
+                # Récupération de la clé AES de communication avec la CA
                 aesKeyCa = aes_instance.get_aes_key("ca")
                 if aesKeyCa is None:
                     print("TOPIC CA CODE 2 : Clé aes de communication avec la CA introuvable.")
@@ -70,6 +73,7 @@ def on_mqtt_message(client, userdata, message):
                     return None
                 bool_result =  struct.unpack('?', byte_result)[0]
                 
+                # Je place la réponse de la CA dans la classe certificat
                 certificat_instance.setResponseCa(bool_result)
                 print("\n\n\nCERTIFICAT REVOQUE ? ", bool_result)
                 

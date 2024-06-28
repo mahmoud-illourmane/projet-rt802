@@ -260,7 +260,11 @@ def secretExchangeCa():
 @api_bp.route('/client/api/get-seller-certificate', methods=['GET'])
 def getSellerCertificate():
     """
-        Cette route demande le certificat d'un vendeur.
+        Cette route permet de demander le certificat d'un vendeur.
+        
+        Elle publie un message sur la file MQTT en utilisant le code 4.
+        Lorsque le vendeur aura publié son certificat sur le topic du client,
+        le client le récupère.
     """
     if request.method != 'GET':
         return jsonify({"error": "Method Not Allowed"}), 405
@@ -268,11 +272,13 @@ def getSellerCertificate():
     
     # Vérifications des clés
     
-    caPubKey = rsa_instance.get_pub_key("ca", True) # Disponibilité de la clé publique de la CA.
+    # Disponibilité de la clé publique de la CA pour pouvoir demander la vérification du certificat du vendeur si besoin.
+    caPubKey = rsa_instance.get_pub_key("ca", True) 
     if caPubKey is None:
         return jsonify({'message': 'ERREUR : La clé publique de la CA est introuvable.'}), 200
     
-    sellerAesKey = aes_instance.get_aes_key("seller") # Disponibilité de la clé aes de communication avec le vendeur.
+    # Disponibilité de la clé AES de communication avec le vendeur.
+    sellerAesKey = aes_instance.get_aes_key("seller")
     if sellerAesKey is None:
         return jsonify({'message': 'ERREUR : La clé AES utilisé avec le vendeur est introuvable.'}), 200
     
@@ -282,32 +288,36 @@ def getSellerCertificate():
         'data' : None
     }
     
+    # Publication du message sur la file MQTT
     error = publish_message(os.getenv("TOPIC_PUBLISH_SELLER"), json.dumps(message))
     if error == -1:
-        print("Error publish to topic seller.")
-        return jsonify({'message': "Error publish to topic seller (getSellerCertificate)."}), 200
+        print("ERREUR : Impossible de publier sur la file MQTT (getSellerCertificate).")
+        return jsonify({'message': "ERREUR : Impossible de publier sur la file MQTT."}), 200
     
     return jsonify({'message': 'ok.'}), 200
 
 @api_bp.route('/client/api/verify-seller-certificate', methods=['GET'])
 async def verifySellerCertificate():
     """
-        Cette route demande le certificat d'un vendeur en local.
+        Cette route permet de vérifier la validité d'un certificat en local.
     """
     if request.method != 'GET':
         return jsonify({"error": "Method Not Allowed"}), 405
-    from app import rsa_instance, certificat_instance
     
-    await asyncio.sleep(1)
+    from app import rsa_instance, certificat_instance   # Importation de l'instance qui détient le certificat du vendeur côté client
     
+    await asyncio.sleep(1)  # J'attends une seconde pour laisser du temps à la sauvegarde du certificat reçu éventuellement par l'appel précédent
+    
+    # Je récupère le certificat du vendeur sauvegarder en local sur le client
     cert = certificat_instance.get_certificate()
     if cert is None:
         return jsonify({'message': "Aucun certificat n'est disponible pour la vérification."}), 200
     print("LE CERTIFICAT:\n", cert)
     
+    # Le client stocke la clé publique de la CA. Elle est retournée pour être utilisée
     pubKey = rsa_instance.get_pub_key("ca")
     if not isinstance(pubKey, RSAPublicKey):
-        return jsonify({'message': 'Erreur La clé de la CA introuvable.'}), 200
+        return jsonify({'message': 'Erreur La clé de la CA est introuvable.'}), 200
     print("PUBKEY\n", pubKey)
     
     try:
@@ -326,31 +336,38 @@ async def verifySellerCertificate():
 @api_bp.route('/client/api/verify-seller-certificate/with-ca', methods=['GET'])
 def verifySellerCertificateWithCaSend():
     """
-        Cette route demande le certificat d'un vendeur en demandant à la CA 
+        Cette route demande la vérification d'un certificat en demandant à la CA 
         s'il est révoqué.
+        On chiffre le certificat en AES, puis le message est publié sur la file MQTT sur le
+        topic où la CA est abonnée.
+        Code de la requête 3.
     """
     if request.method != 'GET':
         return jsonify({"error": "Method Not Allowed"}), 405
     from app import aes_instance, certificat_instance
     
+    # Récuperation le certificat du vendeur stocker sur le client
     cert = certificat_instance.get_certificate()
     if cert is None:
         return jsonify({'message': "Aucun certificat n'est disponible pour la vérification."}), 200
     
+    # Récupération de la clé AES de communication avec la CA
     aesKey = aes_instance.get_aes_key("ca")
     if aesKey is None:
         return jsonify({'message': "Il manque la clé AES de communication avec la CA."}), 200
     
-    # Cryptage du certificat
+    # Chiffrement du certificat
     cert_encrypted = aes_instance.encrypt(cert, aesKey, True)
     if cert_encrypted is None:
         return jsonify({'message': "Erreur lors de la tentative de cryptage du certificat du vendeur."}), 200
     
+    # Données à envoyer
     message = {
         'code' : 3,
         'data' : cert_encrypted
     }
     
+    # Publication du message
     error = publish_message(os.getenv("TOPIC_PUBLISH_CA"), json.dumps(message))
     if error == -1:
         print("Error publish to topic ca.")
@@ -369,6 +386,7 @@ async def printResponseCa():
         return jsonify({"error": "Method Not Allowed"}), 405
     from app import certificat_instance
     
+    # J'attend une seconde entre l'appel de la route verifySellerCertificateWithCaSend et printResponseCa
     await asyncio.sleep(1)
     
     result = certificat_instance.getResponseCa()

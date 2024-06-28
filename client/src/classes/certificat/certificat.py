@@ -69,7 +69,8 @@ class Certificat:
             Cette méthode permet de vérifier la validité d'un certificat.
 
             Args:
-                pubKey (RSAPublicKey): La clé publique de l'autorité de certification.
+                cert (bytes) : Le certificat a vérifier.
+                pubKey (RSAPublicKey) : La clé publique de l'autorité de certification.
 
             Returns:
                 bool: True si le certificat est valide et a été signé par la CA, False sinon.
@@ -77,9 +78,8 @@ class Certificat:
         try:
             # Charge le certificat au format PEM
             if not isinstance(cert, bytes):
-                print("Le certificat n'est pas au format bytes")
+                print("Le certificat n'est pas au format bytes.")
                 return False
-            
             cert_obj = x509.load_pem_x509_certificate(cert, default_backend())
 
             # Vérifie la signature du certificat
