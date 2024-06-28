@@ -12,6 +12,9 @@ ou
 pip3 install -r requirements.txt
 ```
 
+# Structure du projet
+Vous trouverez le fichier "schema.drawio" où la majorité des composantes du projet sont décrites. N'hésitez pas à le consulter.
+
 # Configurer les .env
 Vous devez configurer les fichiers ".env" de chaque serveur. Le port MQTT est indiqué en dur dans les fichiers app.py de chaque serveur.
 
@@ -22,37 +25,21 @@ Vous pouvez lancer chaque serveur de manière individuelle en vous positionnant 
 
 /ca/ :
 ```bash
-python app.py
-```
-OU 
-```bash
 python3 app.py
 ```
 
 /client/ :
-```bash
-python app.py
-```
-OU 
 ```bash
 python3 app.py
 ```
 
 /vendeur/ :
 ```bash
-python app.py
-```
-OU 
-```bash
 python3 app.py
 ```
 
 ## launcher.py
 Un script nommé launcher.py se trouve à la racine du projet. Il utilise des threads pour lancer le projet dans un seul terminal. Un affichage des logs est mis en place de manière dynamique. Attention, pour arrêter les threads, il faudra fermer le terminal.
-```bash
-python launcher.py
-```
-ou 
 ```bash
 python3 launcher.py
 ```
