@@ -30,6 +30,26 @@ def hello():
 #   INTERNAL OPERATIONS
 #
 
+#
+#   UT
+#
+@api_bp.route('/seller/ut/get/pub-key', methods=['GET'])
+def sendPubKeyToUt():
+    """
+        Envoi la clé publique
+    """
+    if request.method != 'GET':
+        return jsonify({"error": "Method Not Allowed"}), 405
+
+    from app import rsa_instance
+
+    pubKey = rsa_instance.get_my_pub_key_pem()
+
+    # Renvoie la clé publique dans la réponse
+    return jsonify({
+        'pubKey': pubKey
+    }), 200
+
 @api_bp.route('/seller/api/generate-rsa-key', methods=['GET'])
 def generateRSAKey():
     if request.method != 'GET':

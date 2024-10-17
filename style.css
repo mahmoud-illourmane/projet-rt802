@@ -20,7 +20,7 @@
 
         /* Style de la poignée de la barre de défilement */
         ::-webkit-scrollbar-thumb {
-            background: #a92fa1; /* Couleur blanc cassé */
+            background: #e4ba57; /* Couleur blanc cassé */
             border-radius: 10px;
         }
 
@@ -104,7 +104,9 @@
         display: flex;
         justify-content: space-between;
     }
-    .client, .vendeur { width: 45%; }
+    .client, .vendeur, .ca { width: 30%; }
+    .ut { width: 100%; }
+
     .client, .vendeur, .ca, .print-final, .verifs-cles-aes-rsa { 
         padding: 10px;
         border-radius: 10px;
@@ -112,10 +114,11 @@
 
     .client { background-color: #d4dfee; }
     .vendeur { background-color: #d4ebe6; }
-    .ca {
-        margin-top: 20px;
-        margin-bottom: 20px;
-        background-color: #dfd9eb;
+    .ca { background-color: #d4ebe6; }
+    .ut { 
+        background-color: #d4ebe6;
+        padding: 10px;
+        border-radius: 15px;
     }
     
     .client-header, .vendeur-header, .ca-header { 

@@ -60,6 +60,42 @@ class Certificat_vendeur:
         else:
             return None
     
+    def extract_public_key(self, cert_id: str) -> Union[bytes, None]:
+        """
+        Extrait la clé publique d'un certificat en binaire.
+        
+        Args:
+            cert_id (str): Identifiant du certificat.
+            
+        Returns:
+            public_key (bytes): La clé publique en format binaire.
+            None: Si une erreur survient ou si le certificat n'existe pas.
+        """
+        # Récupère le certificat à partir de l'identifiant
+        certificat_pem = self.get_certificat(cert_id)
+        
+        if certificat_pem is None:
+            print(f"Certificat avec l'identifiant {cert_id} non trouvé.")
+            return None
+        
+        try:
+            # Charger le certificat PEM en objet x509
+            cert = x509.load_pem_x509_certificate(certificat_pem, default_backend())
+            
+            # Extraire la clé publique
+            public_key = cert.public_key()
+            
+            # Convertir la clé publique en format binaire (DER)
+            public_key_bytes = public_key.public_bytes(
+                encoding=serialization.Encoding.DER,
+                format=serialization.PublicFormat.SubjectPublicKeyInfo
+            )
+            
+            return public_key_bytes
+        except Exception as e:
+            print(f"Erreur lors de l'extraction de la clé publique: {e}")
+            return None
+    
     def get_certificate_to_send(self) -> Union[bytes, None]:
         """
             Cette méthode renvoi le certificat à envoyer au client en utilisant

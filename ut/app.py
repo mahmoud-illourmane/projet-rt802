@@ -10,11 +10,9 @@ project_root = Path(__file__).resolve().parent.parent
 sys.path.append(str(project_root))
 
 # Importation des modules personnel
-from routes.mqtt import configure_mqtt
 
 # Fichiers de routes
 from routes.api import api_bp
-from routes.mqtt import mqtt_bp
 
 # Classes RSA AES & Certificat
 from encryption.rsa import ChiffrementRSA
@@ -22,16 +20,16 @@ from encryption.aes import ChiffrementAES
 from src.classes.certificat.certificat import Certificat
 
 # Configuration des logs pour l'utilisation du Launcher.py
-log_dir = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'client.log')
+log_dir = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'ut.log')
 logging.basicConfig(filename=log_dir, level=logging.DEBUG)
 
 # Instanciation du serveur Flask
 app = Flask(__name__)
-CORS(app, origins='*', methods=['GET', 'POST', 'OPTIONS']) # Permet à vue.js d'intéragir avec Flask.
+# Permet à vue.js d'intéragir avec Flask.
+CORS(app, origins="*", methods=["GET", "POST", "OPTIONS"], allow_headers=["Content-Type", "Authorization"])
 
 # Sauvegarde des Blueprints
 app.register_blueprint(api_bp)
-app.register_blueprint(mqtt_bp, url_prefix='/mqtt')
 
 # Permet l'utilisation de os.getenv
 load_dotenv()
@@ -48,16 +46,13 @@ certificat_instance = Certificat()
 """
 |
 |   Ce code constitue le point d'amorçage du serveur 
-|   Flask qui gère la composante du client.
+|   Flask qui gère la composante du UT.
 |
 |   Auteur: Mahmoud ILLOURMANE
-|   Date de création: 25 Mai 2024
+|   Date de création: 17 Oct. 2024
 |
 """
 
-# Configurer MQTT avec l'application Flask
-configure_mqtt(app)
-
 if __name__ == '__main__':
-    app.run(port=5001, debug=True)
+    app.run(port=5005, debug=True)
     
