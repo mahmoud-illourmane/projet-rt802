@@ -347,33 +347,6 @@
                 </div>
             </div> <!-- CA -->
         </div> 
-
-        <!-- UT -->
-        <div class="ut mt-3" id="ut">
-            <div v-if="utAvailable" class="vendeur-content">
-                <div class="vendeur-header">
-                    <span class="material-icons s_XL">storefront</span>
-                    <h5>UT actif</h5>
-                </div>
-                
-                <div class="operation-btn mb-2 mt-3 bg_1">
-                    <label for="getPubKey">Obtenir la clé publique du vendeur</label>
-                    <button class="btn btn-sm btn-success mt-2" type="button" @click="getSellerPubKey">Obtenir</button>
-                </div> <!-- Obtenir la clé publique --> 
-
-                <div class="vendeur-print print bg_3 p-2">
-                    <h6 class="c_1">Sortie</h6>
-                    <a @click="cleanPrintUt" class="material-icons c_2 cleaner_icon">cleaning_services</a>
-                    <div class="print-final">
-                        {{ printUt }}
-                    </div>
-                </div>
-            </div>
-            <div v-else class="vendeur-off">
-                <span class="material-icons s_XL">error</span>
-                <h6>Veuillez allumer le serveur de UT.</h6>
-            </div>
-        </div> <!-- UT -->
     </div>
 
     <!-- Bootsrap CDN -->
@@ -1626,78 +1599,6 @@
                 }
             }
         }).mount('#ca');
-
-        // UT
-        createApp({
-            setup() {
-                /*=== VARIABLES ====*/
-                    const utAvailable = ref(false);
-                    const pubKey = ref(null);
-
-                    const printUt = ref(null);
-                /*=== END/VARIABLES ====*/
-
-                /*==== FONCTIONS ====*/
-                    function cleanPrintUt() {
-                        printUt.value = null;
-                    }
-                /*==== END/FONCTIONS ====*/
-
-                /*==== ************** ====*/
-                /*==== REQUETES AXIOS ====*/
-                /*==== ************** ====*/
-                    /*
-                    *   Vérifie que le serveur du vendeur est allumé.
-                    */
-                    async function a_checkUt() {
-                        try {
-                            const response = await axios.get('http://127.0.0.1:5005/ut/api/hello');
-                            const statusCode = response.status;
-
-                            if(statusCode == 200) {
-                                utAvailable.value = true;
-                            } else {
-                                utAvailable.value = false;
-                            }
-                        } catch (err) {
-                            console.log('VENDEUR : Erreur lors de la requête API :', err.message);
-                        }
-                    }
-
-                    /*
-                    *   Vérifie que le serveur de la CA est allumé.
-                    */
-                    async function getSellerPubKey() {
-                        try {
-                            const response = await axios.get('http://127.0.0.1:5002/seller/ut/get/pub-key');
-                            const statusCode = response.status;
-
-                            if(statusCode == 200) {
-                                printUt.value = response.data.pubKey;
-                            } else {
-                                printUt.value = null;
-                            }
-                        } catch (err) {
-                            console.error('UT : Erreur lors de la requête API (getSellerPubKey) :', err.message);
-                        }
-                    }
-                /*==== END/REQUETES AXIOS ====*/
-
-                onMounted(async () => {
-                    a_checkUt();
-                });
-
-                return {
-                    utAvailable,
-                    pubKey,
-                    printUt,
-
-                    a_checkUt,
-                    cleanPrintUt,
-                    getSellerPubKey
-                }
-            }
-        }).mount('#ut');
     </script>
 </body>
 </html>
