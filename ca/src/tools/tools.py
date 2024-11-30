@@ -100,3 +100,23 @@ def write_log(entry, filename="ca_log.txt"):
 
     # Donne des autorisations pour supprimer le fichier
     os.chmod(log_file_path, 0o666) 
+    
+def write_log_2(entry, filename="ca_log.txt"):
+    """
+    Écrit une entrée dans un fichier log avec la date et l'heure actuelles.
+
+    Args:
+        entry (str): L'entrée à écrire dans le fichier log.
+        filename (str): Le nom du fichier log. Par défaut, "ca_log.txt".
+    """
+    # Chemin absolu vers le fichier
+    base_dir = os.path.dirname(__file__)
+    log_file_path = os.path.join(base_dir, filename)
+
+    # Obtention de la date et de l'heure actuelles
+    now = datetime.now()
+    date_time = now.strftime("%Y-%m-%d %H:%M:%S")
+
+    # Écriture de l'entrée dans le fichier log
+    with open(log_file_path, "a") as file:
+        file.write(f"{date_time} - {entry}\n")

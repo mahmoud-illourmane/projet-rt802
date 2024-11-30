@@ -9,7 +9,7 @@ mqtt_bp = Blueprint('mqtt', __name__)
 
 mqtt = Mqtt()
 
-def configure_mqtt(app):
+def configure_mqtt(app, code1_event):
     """
     Configure les paramètres MQTT et lie les callbacks.
     """
@@ -21,7 +21,7 @@ def configure_mqtt(app):
         
     @mqtt.on_message()
     def handle_mqtt_message(client, userdata, message):
-        on_mqtt_message(client, userdata, message)
+        on_mqtt_message(client, userdata, message, code1_event)
 
 def on_mqtt_connect(client, userdata, flags, rc):
     """
@@ -35,7 +35,7 @@ def on_mqtt_connect(client, userdata, flags, rc):
     else:
         print(f"Échec de la connexion à la file MQTT avec le code de retour {rc}")
 
-def on_mqtt_message(client, userdata, message):
+def on_mqtt_message(client, userdata, message, code1_event):
     """
         Logique à exécuter lorsqu'un message est reçu.
     """
@@ -133,21 +133,25 @@ def on_mqtt_message(client, userdata, message):
     elif message.topic == str(os.getenv("TOPIC_SUB_SELLER")):
         code = message_data['code']
 
-        if code == 1: # Envoi de la clé publique au vendeur
+        if code == 1:  # Envoi de la clé publique au vendeur
             from app import rsa_instance
-            print("TOPIC VENDEUR CODE 1: DEMANDE D'ENVOIE DE LA CLE PUBLIQUE AU VENDEUR.")
+            print("TOPIC VENDEUR CODE 1: DEMANDE D'ENVOI DE LA CLÉ PUBLIQUE AU VENDEUR.")
             
+            # Récupération de la clé publique de la CA
             pubKey = rsa_instance.get_my_pub_key_pem()
-            if pubKey == None:
+            if pubKey is None:
                 print("ERROR PUBKEY")
-
-            message = {
-                'code': 1,
-                'data': pubKey
-            }
+            else:
+                # Déclenchement de l'événement pour informer le thread dans app.py
+                code1_event.set()
             
-            publish_message(os.getenv("TOPIC_PUBLISH_SELLER"), json.dumps(message))
-            print("TOPIC VENDEUR CODE 1 PUBLIE.")
+                message = {
+                    'code': 1,
+                    'data': pubKey
+                }
+                
+                publish_message(os.getenv("TOPIC_PUBLISH_SELLER"), json.dumps(message))
+                print("TOPIC VENDEUR CODE 1 PUBLIÉ.")
             
         elif code == 2: # Échange du secret avec le vendeur
             print(f"TOPIC VENDEUR CODE 2 : DEMANDE D'ECHANGE DE SECRET")
